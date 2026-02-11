@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [assessmentView, setAssessmentView] = useState<"band" | "percentage">("band");
 
   const filtered = MOCK_STUDENTS.filter((s) => {
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.regNumber.toLowerCase().includes(search.toLowerCase());
@@ -141,6 +142,10 @@ export default function AdminDashboard() {
                 <SelectItem value="Multiple Offers">Multiple Offers</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
+              <button onClick={() => setAssessmentView("band")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Bands</button>
+              <button onClick={() => setAssessmentView("percentage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>%</button>
+            </div>
             <button className="h-9 px-3 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
               <Download className="w-3.5 h-3.5" /> Export
             </button>
@@ -160,7 +165,10 @@ export default function AdminDashboard() {
                   <span className="flex items-center justify-center gap-1">Year <SortIcon col="year" /></span>
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Tech Band</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Assessment</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1A Aptitude</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1B Coding</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Overall</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R2 In-Person</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("employabilityScore")}>
                   <span className="flex items-center justify-center gap-1">Score <SortIcon col="employabilityScore" /></span>
                 </th>
@@ -178,7 +186,16 @@ export default function AdminDashboard() {
                   <td className="px-4 py-3 text-muted-foreground">{s.department}</td>
                   <td className="px-4 py-3 text-center">{s.year}</td>
                   <td className="px-4 py-3 text-center"><BandBadge band={s.techBand} /></td>
-                  <td className="px-4 py-3 text-center"><BandBadge band={s.assessmentBand} /></td>
+                  <td className="px-3 py-3 text-center">
+                    {assessmentView === "band" ? <BandBadge band={s.r1aAptitude.band} /> : <span className="text-sm font-medium">{s.r1aAptitude.score}%</span>}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {assessmentView === "band" ? <BandBadge band={s.r1bCoding.band} /> : <span className="text-sm font-medium">{s.r1bCoding.score}%</span>}
+                  </td>
+                  <td className="px-3 py-3 text-center"><BandBadge band={s.r1Overall} /></td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r2InPerson === "—" ? <span className="text-xs text-muted-foreground">—</span> : <BandBadge band={s.r2InPerson} />}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`font-semibold ${s.employabilityScore >= 80 ? "text-success" : s.employabilityScore >= 60 ? "text-accent" : s.employabilityScore >= 40 ? "text-warning" : "text-destructive"}`}>
                       {s.employabilityScore}
