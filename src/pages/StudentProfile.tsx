@@ -5,9 +5,12 @@ import StatusBadge from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   User, Mail, Phone, Building, Calendar, Award, Briefcase, BookOpen,
-  Plus, Star, TrendingUp, GraduationCap,
+  Plus, Star, TrendingUp, GraduationCap, Pencil, Save, X,
 } from "lucide-react";
 
 const STUDENT_SKILLS = [
@@ -48,9 +51,31 @@ const SCORE_BREAKDOWN = [
 
 export default function StudentProfile() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"skills" | "assessments" | "placements" | "employability">("skills");
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState({
+    phone: "+91 98765 43210",
+    personalEmail: "arjun.personal@gmail.com",
+    linkedIn: "linkedin.com/in/arjunsharma",
+    github: "github.com/arjunsharma",
+    address: "Chennai, Tamil Nadu",
+    bio: "Passionate about full-stack development and cloud computing.",
+  });
+  const [editForm, setEditForm] = useState(profile);
 
   const totalScore = SCORE_BREAKDOWN.reduce((sum, s) => sum + s.contribution, 0);
+
+  const handleSave = () => {
+    setProfile(editForm);
+    setIsEditing(false);
+    toast({ title: "Profile Updated", description: "Your profile has been saved successfully." });
+  };
+
+  const handleCancel = () => {
+    setEditForm(profile);
+    setIsEditing(false);
+  };
 
   const tabs = [
     { id: "skills" as const, label: "Skills", icon: Award },
@@ -68,27 +93,78 @@ export default function StudentProfile() {
             {user?.name.split(" ").map(n => n[0]).join("")}
           </div>
           <div className="flex-1 min-w-0 space-y-3">
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{user?.name}</h1>
-              <p className="text-sm text-muted-foreground font-mono">{user?.regNumber}</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{user?.name}</h1>
+                <p className="text-sm text-muted-foreground font-mono">{user?.regNumber}</p>
+              </div>
+              {!isEditing ? (
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={() => setIsEditing(true)}>
+                  <Pencil className="w-3.5 h-3.5" /> Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" className="gap-1.5 text-xs h-8" onClick={handleSave}>
+                    <Save className="w-3.5 h-3.5" /> Save
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleCancel}>
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </Button>
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{user?.email}</span>
-              <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />+91 98765 43210</span>
-              <span className="flex items-center gap-1.5"><Building className="w-3.5 h-3.5" />{user?.department}</span>
-              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Year 3</span>
-            </div>
-            <div className="flex gap-3 items-center">
-              <StatusBadge status="Placed" />
-              <BandBadge band="C1" />
-              <span className="text-sm font-semibold text-accent">Score: {totalScore.toFixed(1)}</span>
-            </div>
+
+            {!isEditing ? (
+              <>
+                <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{user?.email}</span>
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{profile.phone}</span>
+                  <span className="flex items-center gap-1.5"><Building className="w-3.5 h-3.5" />{user?.department}</span>
+                  <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Year 3</span>
+                </div>
+                {profile.bio && <p className="text-sm text-muted-foreground italic">{profile.bio}</p>}
+                <div className="flex gap-3 items-center">
+                  <StatusBadge status="Placed" />
+                  <BandBadge band="C1" />
+                  <span className="text-sm font-semibold text-accent">Score: {totalScore.toFixed(1)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Phone</Label>
+                  <Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Personal Email</Label>
+                  <Input value={editForm.personalEmail} onChange={e => setEditForm({ ...editForm, personalEmail: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">LinkedIn</Label>
+                  <Input value={editForm.linkedIn} onChange={e => setEditForm({ ...editForm, linkedIn: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">GitHub</Label>
+                  <Input value={editForm.github} onChange={e => setEditForm({ ...editForm, github: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Address</Label>
+                  <Input value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Bio</Label>
+                  <Input value={editForm.bio} onChange={e => setEditForm({ ...editForm, bio: e.target.value })} className="h-9 text-sm" />
+                </div>
+              </div>
+            )}
           </div>
-          <div className="text-right space-y-1 shrink-0">
-            <div className="text-xs text-muted-foreground">Profile Completeness</div>
-            <div className="text-lg font-bold text-foreground">85%</div>
-            <Progress value={85} className="w-32 h-2" />
-          </div>
+          {!isEditing && (
+            <div className="text-right space-y-1 shrink-0">
+              <div className="text-xs text-muted-foreground">Profile Completeness</div>
+              <div className="text-lg font-bold text-foreground">85%</div>
+              <Progress value={85} className="w-32 h-2" />
+            </div>
+          )}
         </div>
       </div>
 
