@@ -1,12 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard, Users, ClipboardCheck, BarChart3, Settings, LogOut,
-  GraduationCap, User, BookOpen, Award, Briefcase, FileCheck, Database,
-  Search, Shield, ChevronLeft, ChevronRight,
+  LayoutDashboard, Users, LogOut, User, BookOpen,
+  GraduationCap, ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
 
 interface NavItem {
   label: string;
@@ -18,26 +16,10 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   admin: [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { label: "Students", path: "/students", icon: Users },
-    { label: "Attendance Approvals", path: "/attendance-approvals", icon: ClipboardCheck },
-    { label: "Placements", path: "/placements", icon: Briefcase },
-    { label: "Analytics", path: "/analytics", icon: BarChart3 },
-    { label: "Settings", path: "/settings", icon: Settings },
   ],
   student: [
     { label: "My Profile", path: "/profile", icon: User },
-    { label: "My Skills", path: "/skills", icon: Award },
     { label: "Assessments", path: "/assessments", icon: BookOpen },
-    { label: "Training", path: "/training", icon: GraduationCap },
-    { label: "Placements", path: "/my-placements", icon: Briefcase },
-  ],
-  backend: [
-    { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { label: "Attendance Validation", path: "/attendance-validation", icon: FileCheck },
-    { label: "Assessments", path: "/manage-assessments", icon: BookOpen },
-    { label: "Student Search", path: "/student-search", icon: Search },
-    { label: "Configuration", path: "/configuration", icon: Settings },
-    { label: "Data Management", path: "/data-management", icon: Database },
-    { label: "Audit Logs", path: "/audit-logs", icon: Shield },
   ],
 };
 
@@ -74,7 +56,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             return (
               <Link
                 key={item.path}
@@ -109,7 +91,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium truncate">{user.name}</div>
-                <div className="text-[10px] text-sidebar-muted truncate capitalize">{user.role === "backend" ? "Backend Team" : user.role}</div>
+                <div className="text-[10px] text-sidebar-muted truncate capitalize">{user.role}</div>
               </div>
             </div>
           )}

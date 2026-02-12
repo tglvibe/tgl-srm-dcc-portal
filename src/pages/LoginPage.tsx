@@ -1,26 +1,28 @@
 import { useState } from "react";
-import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { GraduationCap, Shield, Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const ROLE_CONFIG: { role: UserRole; label: string; description: string; icon: typeof GraduationCap }[] = [
-  { role: "student", label: "Student", description: "Access your profile, skills & placements", icon: GraduationCap },
-  { role: "admin", label: "Administration", description: "Dashboard, approvals & analytics", icon: Shield },
-  { role: "backend", label: "Backend Team", description: "Validation, configuration & data", icon: Shield },
-];
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<UserRole>("student");
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password, selectedRole);
+    const success = login(email, password);
+    if (!success) {
+      toast({
+        title: "Invalid Credentials",
+        description: "Please use the demo credentials shown below.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -46,13 +48,13 @@ export default function LoginPage() {
             University<br />Executive Portal
           </h1>
           <p className="text-primary-foreground/70 text-lg max-w-md leading-relaxed">
-            Enterprise-grade platform for managing student skill development, assessments, training, and placements across all academic years.
+            Enterprise-grade Decision Intelligence platform for managing student assessments, skills, and performance analytics.
           </p>
           <div className="flex gap-8 pt-4">
             {[
-              { value: "20K+", label: "Students" },
-              { value: "47", label: "Programs" },
-              { value: "200+", label: "Companies" },
+              { value: "10K+", label: "Students" },
+              { value: "4", label: "Years" },
+              { value: "Real-time", label: "Analytics" },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className="text-2xl font-bold text-primary-foreground">{stat.value}</div>
@@ -79,26 +81,7 @@ export default function LoginPage() {
 
           <div>
             <h2 className="text-2xl font-bold text-foreground">Sign in to your account</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Select your role and enter your credentials</p>
-          </div>
-
-          {/* Role selector */}
-          <div className="grid grid-cols-3 gap-2">
-            {ROLE_CONFIG.map(({ role, label, icon: Icon }) => (
-              <button
-                key={role}
-                type="button"
-                onClick={() => setSelectedRole(role)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs font-medium transition-all duration-200 ${
-                  selectedRole === role
-                    ? "border-primary bg-primary/5 text-primary shadow-sm"
-                    : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {label}
-              </button>
-            ))}
+            <p className="mt-1.5 text-sm text-muted-foreground">Enter your credentials to access the portal</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,6 +94,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11"
+                required
               />
             </div>
 
@@ -124,6 +108,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 pr-10"
+                  required
                 />
                 <button
                   type="button"
@@ -137,13 +122,30 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full h-11 text-sm font-medium gap-2">
               <LogIn className="w-4 h-4" />
-              Sign In as {ROLE_CONFIG.find(r => r.role === selectedRole)?.label}
+              Sign In
             </Button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground">
-            Demo mode — any credentials will work. Select a role to explore.
-          </p>
+          {/* Demo credentials */}
+          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+            <p className="text-xs font-semibold text-foreground">Demo Credentials</p>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border/60">
+                <Shield className="w-4 h-4 text-primary shrink-0" />
+                <div>
+                  <span className="font-medium text-foreground">Admin:</span>{" "}
+                  <span className="text-muted-foreground font-mono">admin@srmist.edu.in / admin123</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border/60">
+                <GraduationCap className="w-4 h-4 text-accent shrink-0" />
+                <div>
+                  <span className="font-medium text-foreground">Student:</span>{" "}
+                  <span className="text-muted-foreground font-mono">student@srmist.edu.in / student123</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
