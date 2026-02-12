@@ -1,32 +1,42 @@
 export interface StudentRecord {
   id: number;
-  s_no: number;
-  program: string;
-  year: string; // "First", "Second", "Third", "Fourth"
+  // original DB identity / sequence number
+  s_no?: number;
+  // program and year/yop from DB
+  program?: string | null;
+  yop?: string | null; // year of passing (as stored in DB)
+  year?: string | null; // derived label (First/Second/Third/Fourth) if available
   registration_number: string;
   student_name: string;
-  email: string;
-  department: string;
-  specialization: string;
-  section: string;
-  r1_attendance: string; // "Present" | "Absent"
-  aptitude_score: number | null;
-  aptitude_max: number | null;
-  aptitude_percentage: string | null; // e.g. "58%"
-  coding_gained: number | null;
-  coding_max: number | null;
-  coding_percentage: string | null;
-  aptitude_band: string | null; // ".1", ".2", ".3"
-  coding_band: string | null; // "C1"–"C6"
-  r1_band: string | null; // e.g. "C2.2"
-  r1_result: string | null; // "PASS" | "FAIL"
-  r2_status: string | null; // e.g. "C2.1", "R2-ABSENT", "R2-PENDING"
+  email?: string | null;
+  department?: string | null;
+  specialization?: string | null;
+  section?: string | null;
+  r1_attendance?: string | null; // "Present" | "Absent"
+  aptitude_score?: number | null;
+  aptitude_max?: number | null;
+  aptitude_percentage?: string | null; // e.g. "58%"
+  coding_gained?: number | null;
+  coding_max?: number | null;
+  coding_percentage?: string | null;
+  aptitude_band?: string | null; // ".1", ".2", ".3"
+  coding_band?: string | null; // "C1"–"C6"
+  r1_band?: string | null; // e.g. "C2.2"
+  r1_result?: string | null; // "PASS" | "FAIL"
+  r2_status?: string | null; // e.g. "C2.1", "R2-ABSENT", "R2-PENDING"
+  r2_result?: string | null;
+  r2_category?: string | null;
 }
 
 export interface Database {
   public: {
     Tables: {
       students: {
+        Row: StudentRecord;
+        Insert: Omit<StudentRecord, "id">;
+        Update: Partial<Omit<StudentRecord, "id">>;
+      };
+      staging_student_assessments: {
         Row: StudentRecord;
         Insert: Omit<StudentRecord, "id">;
         Update: Partial<Omit<StudentRecord, "id">>;

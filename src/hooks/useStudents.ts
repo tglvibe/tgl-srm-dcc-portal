@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { getMockStudents } from "@/data/mockStudents";
 import type { StudentRecord } from "@/types/database";
+import { YEAR_YOP_MAP } from "@/types/database";
 
 const PAGE_SIZE = 1000;
 
@@ -35,33 +35,15 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Mock data fallback
-  const mockFiltered = useMemo(() => {
-    if (isSupabaseConfigured()) return null;
-    let data = getMockStudents();
-    if (options.year) data = data.filter((s) => s.year === options.year);
-    if (options.department) data = data.filter((s) => s.department === options.department);
-    if (options.section) data = data.filter((s) => s.section === options.section);
-    if (options.r1Attendance) data = data.filter((s) => s.r1_attendance === options.r1Attendance);
-    if (options.r1Result) data = data.filter((s) => s.r1_result === options.r1Result);
-    if (options.search) {
-      const q = options.search.toLowerCase();
-      data = data.filter(
-        (s) =>
-          s.student_name.toLowerCase().includes(q) ||
-          s.registration_number.toLowerCase().includes(q) ||
-          s.email.toLowerCase().includes(q)
-      );
-    }
-    return data;
-  }, [options.year, options.department, options.section, options.search, options.r1Attendance, options.r1Result]);
+  // No mock data: if Supabase is not configured, we stop with an error state
+  const mockFiltered = null;
 
   const fetchAllStudents = useCallback(async () => {
-    // Use mock data if Supabase isn't configured
+    // If Supabase isn't configured, bail out with an informative error (no mock data)
     if (!isSupabaseConfigured()) {
-      const data = mockFiltered || [];
-      setStudents(data);
-      setTotalCount(data.length);
+      setError("Supabase not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
+      setStudents([]);
+      setTotalCount(0);
       setLoading(false);
       return;
     }
@@ -71,10 +53,13 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
 
     try {
       let countQuery = supabase
-        .from("students")
+        .from("staging_student_assessments")
         .select("*", { count: "exact", head: true });
 
-      if (options.year) countQuery = countQuery.eq("year", options.year);
+      if (options.year) {
+        const yop = YEAR_YOP_MAP[options.year as keyof typeof YEAR_YOP_MAP];
+        if (yop) countQuery = countQuery.eq("yop", String(yop));
+      }
       if (options.department) countQuery = countQuery.eq("department", options.department);
       if (options.section) countQuery = countQuery.eq("section", options.section);
       if (options.r1Attendance) countQuery = countQuery.eq("r1_attendance", options.r1Attendance);
@@ -92,16 +77,22 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
       setTotalCount(total);
 
       const allRecords: StudentRecord[] = [];
-      const pages = Math.ceil(total / PAGE_SIZE);
 
-      for (let page = 0; page < pages; page++) {
+      // Cursor-based pagination (efficient for large tables)
+      let lastId: number | null = null;
+      while (true) {
         let query = supabase
-          .from("students")
+          .from("staging_student_assessments")
           .select("*")
-          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-          .order("s_no", { ascending: true });
+          .order("id", { ascending: true })
+          .limit(PAGE_SIZE);
 
-        if (options.year) query = query.eq("year", options.year);
+        if (lastId) query = query.gt("id", lastId);
+
+        if (options.year) {
+          const yop = YEAR_YOP_MAP[options.year as keyof typeof YEAR_YOP_MAP];
+          if (yop) query = query.eq("yop", String(yop));
+        }
         if (options.department) query = query.eq("department", options.department);
         if (options.section) query = query.eq("section", options.section);
         if (options.r1Attendance) query = query.eq("r1_attendance", options.r1Attendance);
@@ -114,7 +105,78 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
 
         const { data, error: fetchError } = await query;
         if (fetchError) throw fetchError;
-        if (data) allRecords.push(...(data as StudentRecord[]));
+        if (data && (data as any[]).length > 0) {
+          // Map DB rows to StudentRecord shape used by the UI
+          const mapped = (data as any[]).map((r) => {
+            const toNumber = (v: any) => {
+              if (v === null || v === undefined || v === "") return null;
+              const n = Number(String(v).replace(/[^0-9.-]+/g, ""));
+              return Number.isNaN(n) ? null : n;
+            };
+
+            const ensurePct = (v: any) => {
+              if (v === null || v === undefined) return null;
+              const s = String(v).trim();
+              return s.endsWith("%") ? s : `${s}%`;
+            };
+
+            // derive year label from yop if mapping exists
+            let yearLabel: string | null = null;
+            try {
+              const yopVal = r.yop ? String(r.yop).trim() : null;
+              if (yopVal) {
+                const numeric = Number(yopVal);
+                for (const k of Object.keys(YEAR_YOP_MAP)) {
+                  if (YEAR_YOP_MAP[k as keyof typeof YEAR_YOP_MAP] === numeric) {
+                    yearLabel = k;
+                    break;
+                  }
+                }
+              }
+            } catch (e) {
+              yearLabel = null;
+            }
+
+            return {
+              id: Number(r.id),
+              s_no: r.id,
+              program: r.program || null,
+              yop: r.yop || null,
+              year: yearLabel,
+              registration_number: r.registration_number,
+              student_name: r.student_name,
+              email: r.email || null,
+              department: r.department || null,
+              specialization: r.specialization || null,
+              section: r.section || null,
+              r1_attendance: r.r1_attendance || null,
+              aptitude_score: toNumber(r.aptitude_score),
+              aptitude_max: toNumber(r.aptitude_max),
+              aptitude_percentage: ensurePct(r.aptitude_percentage),
+              coding_gained: toNumber(r.coding_gained),
+              coding_max: toNumber(r.coding_max),
+              coding_percentage: ensurePct(r.coding_percentage),
+              aptitude_band: r.aptitude_band || null,
+              coding_band: r.coding_band || null,
+              r1_band: r.r1_band || null,
+              r1_result: r.r1_result || null,
+              r2_status: r.r2_status || null,
+              r2_result: r.r2_result || null,
+              r2_category: r.r2_category || null,
+            } as StudentRecord;
+          });
+
+          allRecords.push(...mapped);
+
+          // set lastId to the last row's id for next cursor
+          const lastRow = (data as any[])[(data as any[]).length - 1];
+          lastId = lastRow?.id ?? null;
+
+          // if returned less than page size, we've reached the end
+          if ((data as any[]).length < PAGE_SIZE) break;
+        } else {
+          break;
+        }
       }
 
       setStudents(allRecords);
@@ -136,10 +198,10 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
     if (!isSupabaseConfigured()) return;
 
     const channel = supabase
-      .channel("students-changes")
+      .channel("staging-students-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "students" },
+        { event: "*", schema: "public", table: "staging_student_assessments" },
         () => fetchAllStudents()
       )
       .subscribe();
@@ -161,13 +223,9 @@ export function useStudent(registrationNumber: string) {
   useEffect(() => {
     if (!registrationNumber) return;
 
-    // Use mock data if Supabase isn't configured
     if (!isSupabaseConfigured()) {
-      const found = getMockStudents().find(
-        (s) => s.registration_number === registrationNumber
-      );
-      setStudent(found || null);
-      setError(found ? null : "Student not found in demo data");
+      setError("Supabase not configured — cannot lookup student");
+      setStudent(null);
       setLoading(false);
       return;
     }
@@ -175,7 +233,7 @@ export function useStudent(registrationNumber: string) {
     const fetch = async () => {
       setLoading(true);
       const { data, error: err } = await supabase
-        .from("students")
+        .from("staging_student_assessments")
         .select("*")
         .eq("registration_number", registrationNumber)
         .single();
@@ -183,8 +241,67 @@ export function useStudent(registrationNumber: string) {
       if (err) {
         setError(err.message);
         setStudent(null);
+      } else if (data) {
+        // map row
+        const r: any = data;
+        const toNumber = (v: any) => {
+          if (v === null || v === undefined || v === "") return null;
+          const n = Number(String(v).replace(/[^0-9.-]+/g, ""));
+          return Number.isNaN(n) ? null : n;
+        };
+        const ensurePct = (v: any) => {
+          if (v === null || v === undefined) return null;
+          const s = String(v).trim();
+          return s.endsWith("%") ? s : `${s}%`;
+        };
+
+        let yearLabel: string | null = null;
+        try {
+          const yopVal = r.yop ? String(r.yop).trim() : null;
+          if (yopVal) {
+            const numeric = Number(yopVal);
+            for (const k of Object.keys(YEAR_YOP_MAP)) {
+              if ((YEAR_YOP_MAP as any)[k] === numeric) {
+                yearLabel = k;
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          yearLabel = null;
+        }
+
+        const mapped: StudentRecord = {
+          id: Number(r.id),
+          s_no: r.id,
+          program: r.program || null,
+          yop: r.yop || null,
+          year: yearLabel,
+          registration_number: r.registration_number,
+          student_name: r.student_name,
+          email: r.email || null,
+          department: r.department || null,
+          specialization: r.specialization || null,
+          section: r.section || null,
+          r1_attendance: r.r1_attendance || null,
+          aptitude_score: toNumber(r.aptitude_score),
+          aptitude_max: toNumber(r.aptitude_max),
+          aptitude_percentage: ensurePct(r.aptitude_percentage),
+          coding_gained: toNumber(r.coding_gained),
+          coding_max: toNumber(r.coding_max),
+          coding_percentage: ensurePct(r.coding_percentage),
+          aptitude_band: r.aptitude_band || null,
+          coding_band: r.coding_band || null,
+          r1_band: r.r1_band || null,
+          r1_result: r.r1_result || null,
+          r2_status: r.r2_status || null,
+          r2_result: r.r2_result || null,
+          r2_category: r.r2_category || null,
+        };
+
+        setStudent(mapped);
       } else {
-        setStudent(data as StudentRecord);
+        setStudent(null);
       }
       setLoading(false);
     };
@@ -199,10 +316,41 @@ export function useStudent(registrationNumber: string) {
         {
           event: "UPDATE",
           schema: "public",
-          table: "students",
+          table: "staging_student_assessments",
           filter: `registration_number=eq.${registrationNumber}`,
         },
-        (payload) => setStudent(payload.new as StudentRecord)
+        (payload) => {
+          const r = payload.new;
+          if (!r) return;
+          const mapped: StudentRecord = {
+            id: Number(r.id),
+            s_no: r.id,
+            program: r.program || null,
+            yop: r.yop || null,
+            year: null,
+            registration_number: r.registration_number,
+            student_name: r.student_name,
+            email: r.email || null,
+            department: r.department || null,
+            specialization: r.specialization || null,
+            section: r.section || null,
+            r1_attendance: r.r1_attendance || null,
+            aptitude_score: r.aptitude_score ?? null,
+            aptitude_max: r.aptitude_max ?? null,
+            aptitude_percentage: r.aptitude_percentage ?? null,
+            coding_gained: r.coding_gained ?? null,
+            coding_max: r.coding_max ?? null,
+            coding_percentage: r.coding_percentage ?? null,
+            aptitude_band: r.aptitude_band || null,
+            coding_band: r.coding_band || null,
+            r1_band: r.r1_band || null,
+            r1_result: r.r1_result || null,
+            r2_status: r.r2_status || null,
+            r2_result: r.r2_result || null,
+            r2_category: r.r2_category || null,
+          };
+          setStudent(mapped);
+        }
       )
       .subscribe();
 

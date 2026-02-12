@@ -15,6 +15,7 @@ let _currentKeyIndex = 0;
 function rotateKey(): string | null {
   const keys = getApiKeys();
   if (keys.length === 0) return null;
+  // find next available key (simple round-robin)
   const key = keys[_currentKeyIndex % keys.length];
   _currentKeyIndex = (_currentKeyIndex + 1) % keys.length;
   return key;
@@ -41,6 +42,8 @@ export async function chatWithGemini(
 
   const retries = maxRetries ?? keys.length;
 
+  let backoffBase = 300; // ms
+
   for (let attempt = 0; attempt < retries; attempt++) {
     const key = rotateKey();
     if (!key) break;
@@ -62,23 +65,29 @@ export async function chatWithGemini(
       });
 
       if (response.status === 429 || response.status === 403) {
-        console.warn(`Gemini key ${attempt + 1} rate-limited/forbidden, rotating...`);
+        // Rate limited — exponential backoff and try next key
+        const wait = backoffBase * Math.pow(2, attempt);
+        console.warn(`Gemini key ${attempt + 1} rate-limited/forbidden, rotating after ${wait}ms...`);
+        await new Promise((res) => setTimeout(res, wait));
         continue;
       }
 
       if (!response.ok) {
         const err = await response.text();
         console.error("Gemini error:", err);
-        return "AI service temporarily unavailable. Please try again.";
+        // Try next key instead of failing immediately
+        continue;
       }
 
       const data = await response.json();
       return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
     } catch (err) {
       console.error(`Gemini attempt ${attempt + 1} failed:`, err);
-      if (attempt === retries - 1) return "Failed to connect to AI service.";
+      const wait = backoffBase * Math.pow(2, attempt);
+      await new Promise((res) => setTimeout(res, wait));
+      // try next key
     }
   }
 
-  return "All API keys exhausted. Please try again later.";
+  return "All API keys exhausted or requests failed. Please try again later.";
 }
