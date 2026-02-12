@@ -1,8 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { getMockStudents } from "@/data/mockStudents";
 import type { StudentRecord } from "@/types/database";
 
 const PAGE_SIZE = 1000;
+
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return url && key && !url.includes("placeholder") && !key.includes("placeholder");
+};
 
 interface UseStudentsOptions {
   year?: string;
@@ -27,12 +35,41 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Mock data fallback
+  const mockFiltered = useMemo(() => {
+    if (isSupabaseConfigured()) return null;
+    let data = getMockStudents();
+    if (options.year) data = data.filter((s) => s.year === options.year);
+    if (options.department) data = data.filter((s) => s.department === options.department);
+    if (options.section) data = data.filter((s) => s.section === options.section);
+    if (options.r1Attendance) data = data.filter((s) => s.r1_attendance === options.r1Attendance);
+    if (options.r1Result) data = data.filter((s) => s.r1_result === options.r1Result);
+    if (options.search) {
+      const q = options.search.toLowerCase();
+      data = data.filter(
+        (s) =>
+          s.student_name.toLowerCase().includes(q) ||
+          s.registration_number.toLowerCase().includes(q) ||
+          s.email.toLowerCase().includes(q)
+      );
+    }
+    return data;
+  }, [options.year, options.department, options.section, options.search, options.r1Attendance, options.r1Result]);
+
   const fetchAllStudents = useCallback(async () => {
+    // Use mock data if Supabase isn't configured
+    if (!isSupabaseConfigured()) {
+      const data = mockFiltered || [];
+      setStudents(data);
+      setTotalCount(data.length);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // First get total count
       let countQuery = supabase
         .from("students")
         .select("*", { count: "exact", head: true });
@@ -54,7 +91,6 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
       const total = count || 0;
       setTotalCount(total);
 
-      // Fetch in batches of PAGE_SIZE
       const allRecords: StudentRecord[] = [];
       const pages = Math.ceil(total / PAGE_SIZE);
 
@@ -89,23 +125,22 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
     } finally {
       setLoading(false);
     }
-  }, [options.year, options.department, options.section, options.search, options.r1Attendance, options.r1Result]);
+  }, [options.year, options.department, options.section, options.search, options.r1Attendance, options.r1Result, mockFiltered]);
 
   useEffect(() => {
     fetchAllStudents();
   }, [fetchAllStudents]);
 
-  // Real-time subscription
+  // Real-time subscription (only when Supabase is configured)
   useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
     const channel = supabase
       .channel("students-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "students" },
-        () => {
-          // Refetch on any change
-          fetchAllStudents();
-        }
+        () => fetchAllStudents()
       )
       .subscribe();
 
@@ -125,6 +160,17 @@ export function useStudent(registrationNumber: string) {
 
   useEffect(() => {
     if (!registrationNumber) return;
+
+    // Use mock data if Supabase isn't configured
+    if (!isSupabaseConfigured()) {
+      const found = getMockStudents().find(
+        (s) => s.registration_number === registrationNumber
+      );
+      setStudent(found || null);
+      setError(found ? null : "Student not found in demo data");
+      setLoading(false);
+      return;
+    }
 
     const fetch = async () => {
       setLoading(true);
@@ -156,9 +202,7 @@ export function useStudent(registrationNumber: string) {
           table: "students",
           filter: `registration_number=eq.${registrationNumber}`,
         },
-        (payload) => {
-          setStudent(payload.new as StudentRecord);
-        }
+        (payload) => setStudent(payload.new as StudentRecord)
       )
       .subscribe();
 
