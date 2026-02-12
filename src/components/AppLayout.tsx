@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Users, LogOut, User, BookOpen,
-  GraduationCap, ChevronLeft, ChevronRight,
+  GraduationCap, ChevronLeft, ChevronRight, BrainCircuit,
 } from "lucide-react";
 
 interface NavItem {
@@ -16,6 +16,7 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   admin: [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { label: "Students", path: "/students", icon: Users },
+    { label: "Intelligence", path: "/intelligence", icon: BrainCircuit },
   ],
   student: [
     { label: "My Profile", path: "/profile", icon: User },
