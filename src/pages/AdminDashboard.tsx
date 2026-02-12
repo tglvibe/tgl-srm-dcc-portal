@@ -7,16 +7,36 @@ import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ExportDialog from "@/components/ExportDialog";
-import BandBadge from "@/components/BandBadge";
-import { Lightbulb } from "lucide-react";
+import {
+  Lightbulb, Users, BookOpen, UserCheck, UserX,
+  CheckCircle, XCircle, Eye, EyeOff, Award, ShieldCheck, ShieldX, UserPlus,
+} from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, Legend,
 } from "recharts";
 import {
   isActive, isR1Passed, isR2Present, getR2Category,
   R2_CATEGORIES_ORDER, PIE_COLORS, computeR2Categories,
 } from "@/lib/analyticsUtils";
+import type { StudentRecord } from "@/types/database";
+
+/* ─── Premium Chart Tooltip ─── */
+function ChartTooltipContent({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-card border border-border rounded-xl shadow-xl px-4 py-3 text-xs">
+      <p className="font-semibold text-foreground mb-1.5">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.fill || p.color }} />
+          <span className="text-muted-foreground">{p.name}:</span>
+          <span className="font-semibold text-foreground">{p.value?.toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState("all");
@@ -27,23 +47,14 @@ export default function AdminDashboard() {
     selectedYear !== "all" ? { year: selectedYear } : {}
   );
 
-  // Unique departments
-  const departments = useMemo(() => {
-    return Array.from(new Set(allStudents.map((s) => s.department))).sort();
-  }, [allStudents]);
+  const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+  useEffect(() => { setSelectedDepts(departments); }, [departments]);
 
-  // Reset dept selection when year changes
-  useEffect(() => {
-    setSelectedDepts(departments);
-  }, [departments]);
-
-  // Filter by selected departments
   const students = useMemo(() => {
     if (selectedDepts.length === 0 || selectedDepts.length === departments.length) return allStudents;
     return allStudents.filter((s) => selectedDepts.includes(s.department));
   }, [allStudents, selectedDepts, departments]);
 
-  // Compute all stats
   const stats = useMemo(() => {
     const total = students.length;
     const specs = new Set(students.map((s) => s.specialization)).size;
@@ -67,18 +78,17 @@ export default function AdminDashboard() {
     const r2FailedCount = r2PresentCount - r2PassedCount;
     const r2Categories = computeR2Categories(students);
 
-    // Dept band breakdown
     const deptBands = departments
       .filter((d) => selectedDepts.includes(d))
       .map((dept) => {
         const ds = students.filter((s) => s.department === dept && s.r1_attendance === "Present");
         return {
           department: dept,
-          "C1–C4": ds.filter((s) => ["C1", "C2", "C3", "C4"].includes(s.coding_band || "")).length,
-          "C5–C6": ds.filter((s) => ["C5", "C6"].includes(s.coding_band || "")).length,
+          "C1–C4 (Pass)": ds.filter((s) => ["C1", "C2", "C3", "C4"].includes(s.coding_band || "")).length,
+          "C5–C6 (Fail)": ds.filter((s) => ["C5", "C6"].includes(s.coding_band || "")).length,
         };
       })
-      .filter((d) => d["C1–C4"] + d["C5–C6"] > 0);
+      .filter((d) => d["C1–C4 (Pass)"] + d["C5–C6 (Fail)"] > 0);
 
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
@@ -107,113 +117,124 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Executive Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Real-time analytics across {stats.total.toLocaleString()} student records
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+            <Award className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Executive Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Real-time analytics across <span className="font-semibold text-foreground">{stats.total.toLocaleString()}</span> student records
+            </p>
+          </div>
         </div>
         <Link
           to={`/insights?year=${selectedYear}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-warning text-warning-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-warning to-warning/80 text-warning-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all"
         >
           <Lightbulb className="w-4 h-4" />
-          Insights
+          Deep Insights
         </Link>
       </div>
 
-      {/* Year Filter */}
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
-
-      {/* Department Filter */}
       <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} />
 
-      {/* Row 1: Total, Specializations, Active, Inactive */}
+      {/* ─── Batch Overview ─── */}
+      <SectionHeader title="Batch Overview" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
-        <StatCard value={stats.specs} label="Specializations" variant="info" />
-        <StatCard
-          value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`}
-          variant="success" onClick={() => openExport("Active Students", students.filter(isActive))}
-        />
-        <StatCard
-          value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`}
-          variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => !isActive(s)))}
-        />
+        <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
+        <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
+        <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter(isActive))} />
+        <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => !isActive(s)))} />
       </div>
 
-      {/* Row 2: R1 */}
+      {/* ─── Round 1 Cards ─── */}
+      <SectionHeader title="Round 1 Assessment" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`}
-          variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))}
-        />
-        <StatCard
-          value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`}
-          variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))}
-        />
-        <StatCard
-          value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`}
-          variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))}
-        />
-        <StatCard
-          value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`}
-          variant="danger" onClick={() => openExport("R1 Failed", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"))}
-        />
+        <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))} />
+        <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))} />
+        <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))} />
+        <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"))} />
       </div>
 
-      {/* R2 Section (conditional) */}
+      {/* ─── R1 Department Charts (right after R1 cards) ─── */}
+      {stats.deptBands.length > 0 && (
+        <div className="kpi-card">
+          <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+            <BarChartIcon className="w-4 h-4 text-primary" />
+            R1 Coding Band Performance by Department
+          </h3>
+          <p className="text-xs text-muted-foreground mb-5">Pass (C1–C4) vs Fail (C5–C6) bands across departments</p>
+          <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
+            <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
+              <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+              <Bar dataKey="C1–C4 (Pass)" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+              <Bar dataKey="C5–C6 (Fail)" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ─── Round 2 Section ─── */}
       {stats.r2Conducted && (
         <>
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-semibold text-muted-foreground px-4 py-1.5 rounded-full bg-muted border border-border">
-              Round 2
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
+          <SectionHeader title="Round 2 Assessment" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" />
-            <StatCard value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" />
-            <StatCard value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" />
-            <StatCard value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" />
+            <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" />
+            <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" />
+            <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" />
+            <StatCard icon={<ShieldX className="w-5 h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" />
           </div>
 
-          {/* R2 Category Table + Pie */}
+          {/* R2 Category Table + Pie (right after R2 cards) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="kpi-card">
-              <h3 className="text-sm font-semibold text-foreground mb-4">R2 Performance Categories</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Award className="w-4 h-4 text-accent" />
+                R2 Performance Categories
+              </h3>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">Category</th>
-                    <th className="text-right py-2.5 px-3 font-medium text-muted-foreground">No.</th>
-                    <th className="text-right py-2.5 px-3 font-medium text-muted-foreground">%</th>
+                  <tr className="border-b-2 border-border">
+                    <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Category</th>
+                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
+                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.r2Categories.map((cat) => (
-                    <tr key={cat.category} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="py-2.5 px-3 font-medium text-foreground">{cat.category}</td>
-                      <td className="py-2.5 px-3 text-right text-foreground">{cat.count}</td>
-                      <td className="py-2.5 px-3 text-right text-muted-foreground">{cat.percentage.toFixed(1)}%</td>
+                  {stats.r2Categories.map((cat, i) => (
+                    <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                      <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        {cat.category}
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-foreground">{cat.count}</td>
+                      <td className="py-3 px-3 text-right text-muted-foreground">{cat.percentage.toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div className="kpi-card flex flex-col items-center justify-center">
-              <h3 className="text-sm font-semibold text-foreground mb-4 self-start">R2 Distribution</h3>
-              <ResponsiveContainer width="100%" height={260}>
+              <h3 className="text-sm font-semibold text-foreground mb-4 self-start flex items-center gap-2">
+                <PieChartIcon className="w-4 h-4 text-accent" />
+                R2 Distribution
+              </h3>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={stats.r2Categories.filter((c) => c.count > 0)}
-                    cx="50%" cy="50%" innerRadius={50} outerRadius={90}
+                    cx="50%" cy="50%" innerRadius={55} outerRadius={95}
                     dataKey="count" nameKey="category"
+                    strokeWidth={2} stroke="hsl(var(--card))"
                     label={({ category, percentage }) => `${category} ${percentage.toFixed(0)}%`}
                     labelLine={false}
                   >
@@ -221,7 +242,7 @@ export default function AdminDashboard() {
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [value, "Students"]} />
+                  <Tooltip content={<ChartTooltipContent />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -229,37 +250,6 @@ export default function AdminDashboard() {
         </>
       )}
 
-      {/* Department Band Charts */}
-      {stats.deptBands.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="kpi-card">
-            <h3 className="text-sm font-semibold text-foreground mb-4">R1 Pass Bands by Department (C1–C4)</h3>
-            <ResponsiveContainer width="100%" height={Math.max(200, stats.deptBands.length * 36)}>
-              <BarChart data={stats.deptBands} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 10 }} width={65} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                <Bar dataKey="C1–C4" fill="hsl(var(--success))" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="kpi-card">
-            <h3 className="text-sm font-semibold text-foreground mb-4">R1 Fail Bands by Department (C5–C6)</h3>
-            <ResponsiveContainer width="100%" height={Math.max(200, stats.deptBands.length * 36)}>
-              <BarChart data={stats.deptBands} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 10 }} width={65} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
-                <Bar dataKey="C5–C6" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Export Dialog */}
       {exportCtx && (
         <ExportDialog
           open={!!exportCtx}
@@ -273,5 +263,17 @@ export default function AdminDashboard() {
   );
 }
 
-// Type import for inline usage
-import type { StudentRecord } from "@/types/database";
+/* ─── Helpers ─── */
+import { BarChart3 as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
+      <span className="text-xs font-bold text-muted-foreground px-4 py-1.5 rounded-full bg-muted/60 border border-border/60 uppercase tracking-widest">
+        {title}
+      </span>
+      <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
+    </div>
+  );
+}
