@@ -11,6 +11,7 @@ import StudentsPage from "@/pages/StudentsPage";
 import StudentDetailPage from "@/pages/StudentDetailPage";
 import StudentAssessments from "@/pages/StudentAssessments";
 import AppLayout from "@/components/AppLayout";
+import AIChatbot from "@/components/AIChatbot";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ function AuthenticatedRoutes() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <AIChatbot />
     </AppLayout>
   );
 }
