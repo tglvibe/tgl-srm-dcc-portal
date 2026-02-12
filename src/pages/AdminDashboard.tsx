@@ -24,16 +24,25 @@ import type { StudentRecord } from "@/types/database";
 /* ─── Premium Chart Tooltip ─── */
 function ChartTooltipContent({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
+  const values = payload.map((p: any) => (typeof p.value === 'number' ? p.value : 0));
+  const total = values.reduce((s: number, v: number) => s + v, 0);
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-xl px-4 py-3 text-xs">
       <p className="font-semibold text-foreground mb-1.5">{label}</p>
-      {payload.map((p: any, i: number) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.fill || p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold text-foreground">{p.value?.toLocaleString()}</span>
-        </div>
-      ))}
+      {payload.map((p: any, i: number) => {
+        const pct = total > 0 && typeof p.value === 'number' ? ((p.value / total) * 100).toFixed(1) : null;
+        return (
+          <div key={i} className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.fill || p.color }} />
+            <span className="text-muted-foreground">{p.name}:</span>
+            <span className="font-semibold text-foreground">
+              {p.value !== undefined ? (typeof p.value === 'number' ? p.value.toLocaleString() : String(p.value)) : "-"}
+              {pct ? ` (${pct}%)` : null}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -84,11 +93,13 @@ export default function AdminDashboard() {
         const ds = students.filter((s) => s.department === dept && s.r1_attendance === "Present");
         return {
           department: dept,
-          "C1–C4 (Pass)": ds.filter((s) => ["C1", "C2", "C3", "C4"].includes(s.coding_band || "")).length,
-          "C5–C6 (Fail)": ds.filter((s) => ["C5", "C6"].includes(s.coding_band || "")).length,
+          C1: ds.filter((s) => s.coding_band === "C1").length,
+          C2: ds.filter((s) => s.coding_band === "C2").length,
+          C5: ds.filter((s) => s.coding_band === "C5").length,
+          C6: ds.filter((s) => s.coding_band === "C6").length,
         };
       })
-      .filter((d) => d["C1–C4 (Pass)"] + d["C5–C6 (Fail)"] > 0);
+      .filter((d) => d.C1 + d.C2 + d.C5 + d.C6 > 0);
 
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
@@ -163,23 +174,44 @@ export default function AdminDashboard() {
 
       {/* ─── R1 Department Charts (right after R1 cards) ─── */}
       {stats.deptBands.length > 0 && (
-        <div className="kpi-card">
-          <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-            <BarChartIcon className="w-4 h-4 text-primary" />
-            R1 Coding Band Performance by Department
-          </h3>
-          <p className="text-xs text-muted-foreground mb-5">Pass (C1–C4) vs Fail (C5–C6) bands across departments</p>
-          <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
-            <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-              <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              <Bar dataKey="C1–C4 (Pass)" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={28} />
-              <Bar dataKey="C5–C6 (Fail)" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={28} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="kpi-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+              <BarChartIcon className="w-4 h-4 text-primary" />
+              R1 C1/C2 Coding Band Performance by Department
+            </h3>
+            <p className="text-xs text-muted-foreground mb-5">Upper coding bands (C1 and C2) across departments</p>
+            <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
+              <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+                <Bar dataKey="C1" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                <Bar dataKey="C2" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="kpi-card">
+            <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+              <BarChartIcon className="w-4 h-4 text-destructive" />
+              R1 C5/C6 Coding Band Performance by Department
+            </h3>
+            <p className="text-xs text-muted-foreground mb-5">Lower coding bands (C5 and C6) across departments</p>
+            <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
+              <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+                <Bar dataKey="C5" fill="hsl(var(--warning))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                <Bar dataKey="C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

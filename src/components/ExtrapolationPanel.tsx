@@ -96,7 +96,7 @@ export default function ExtrapolationPanel({ students }: { students: StudentReco
         <div className="kpi-card text-center">
           <CheckCircle className="w-5 h-5 text-success mx-auto mb-2" />
           <div className="text-xs text-muted-foreground">Projected Pass</div>
-          <div className="text-xl font-bold text-foreground">{ext.projectedPassCount.toLocaleString()}</div>
+          <div className="text-xl font-bold text-foreground">{ext.projectedPassCount.toLocaleString()} {ext.projectedPassRate ? `(${ext.projectedPassRate}%)` : null}</div>
           <div className="text-[10px] text-muted-foreground">of {ext.totalStudents.toLocaleString()}</div>
         </div>
         <div className="kpi-card text-center">

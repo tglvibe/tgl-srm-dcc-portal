@@ -207,9 +207,18 @@ const ChartTooltipContent = React.forwardRef<
                         {nestLabel ? tooltipLabel : null}
                         <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
                       </div>
-                      {item.value && (
+                      {item.value !== undefined && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {typeof item.value === "number" ? (
+                            (() => {
+                              const values = Array.isArray(payload) ? payload.map((pp) => (typeof pp.value === "number" ? pp.value : 0)) : [];
+                              const total = values.reduce((s, v) => s + v, 0);
+                              const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : null;
+                              return pct ? `${item.value.toLocaleString()} (${pct}%)` : item.value.toLocaleString();
+                            })()
+                          ) : (
+                            String(item.value)
+                          )}
                         </span>
                       )}
                     </div>
