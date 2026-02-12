@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import AdminDashboard from "@/pages/AdminDashboard";
+import InsightsPage from "@/pages/InsightsPage";
+import ReportPage from "@/pages/ReportPage";
 import StudentProfile from "@/pages/StudentProfile";
 import StudentsPage from "@/pages/StudentsPage";
 import StudentDetailPage from "@/pages/StudentDetailPage";
@@ -38,6 +40,10 @@ function AuthenticatedRoutes() {
         <Route path="/dashboard" element={
           user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/profile" replace />
         } />
+        <Route path="/insights" element={
+          user?.role === "admin" ? <InsightsPage /> : <Navigate to="/profile" replace />
+        } />
+        <Route path="/report" element={<ReportPage />} />
         <Route path="/students" element={
           user?.role === "admin" ? <StudentsPage /> : <Navigate to="/profile" replace />
         } />
