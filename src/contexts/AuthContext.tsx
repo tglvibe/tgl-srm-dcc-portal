@@ -1,54 +1,50 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type UserRole = "student" | "admin" | "backend";
+export type UserRole = "student" | "admin";
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  department?: string;
   regNumber?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role: UserRole) => void;
+  login: (email: string, password: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const MOCK_USERS: Record<UserRole, User> = {
-  student: {
-    id: "STU001",
-    name: "Arjun Sharma",
-    email: "arjun.sharma@srmist.edu.in",
-    role: "student",
-    department: "Computer Science",
-    regNumber: "RA2211003010234",
+// Dummy credentials
+const DUMMY_CREDENTIALS = [
+  {
+    email: "admin@srmist.edu.in",
+    password: "admin123",
+    user: { id: "ADM001", name: "Dr. Priya Nair", email: "admin@srmist.edu.in", role: "admin" as UserRole },
   },
-  admin: {
-    id: "ADM001",
-    name: "Dr. Priya Nair",
-    email: "priya.nair@srmist.edu.in",
-    role: "admin",
-    department: "Placement Office",
+  {
+    email: "student@srmist.edu.in",
+    password: "student123",
+    user: { id: "STU001", name: "Saswata Thakur", email: "st1540@srmist.edu.in", role: "student" as UserRole, regNumber: "RA2511003011512" },
   },
-  backend: {
-    id: "BKD001",
-    name: "Rahul Verma",
-    email: "rahul.verma@srmist.edu.in",
-    role: "backend",
-  },
-};
+];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (_email: string, _password: string, role: UserRole) => {
-    setUser(MOCK_USERS[role]);
+  const login = (email: string, password: string): boolean => {
+    const match = DUMMY_CREDENTIALS.find(
+      (c) => c.email === email && c.password === password
+    );
+    if (match) {
+      setUser(match.user);
+      return true;
+    }
+    return false;
   };
 
   const logout = () => setUser(null);

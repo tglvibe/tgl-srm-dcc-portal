@@ -1,33 +1,34 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useParams, useNavigate } from "react-router-dom";
 import { useStudent } from "@/hooks/useStudents";
 import BandBadge from "@/components/BandBadge";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  User, Mail, Building, GraduationCap, BookOpen,
+  ArrowLeft, Mail, Building, GraduationCap, User, BookOpen,
 } from "lucide-react";
 import { YEAR_YOP_MAP } from "@/types/database";
 
-export default function StudentProfile() {
-  const { user } = useAuth();
-  const { student, loading, error } = useStudent(user?.regNumber || "");
+export default function StudentDetailPage() {
+  const { regNumber } = useParams<{ regNumber: string }>();
+  const navigate = useNavigate();
+  const { student, loading, error } = useStudent(regNumber || "");
 
-  if (loading) return <LoadingState message="Loading your profile..." />;
-  if (error || !student) {
-    return (
-      <ErrorState
-        message={error || "Could not find your student record. Make sure your registration number is linked."}
-      />
-    );
-  }
+  if (loading) return <LoadingState message="Loading student profile..." />;
+  if (error || !student) return <ErrorState message={error || "Student not found"} onRetry={() => navigate("/students")} />;
 
   const aptPct = parseFloat(student.aptitude_percentage?.replace("%", "") || "0");
   const codPct = parseFloat(student.coding_percentage?.replace("%", "") || "0");
 
   return (
     <div className="space-y-6">
-      {/* Profile Header Card */}
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" onClick={() => navigate("/students")} className="gap-1.5 text-muted-foreground">
+        <ArrowLeft className="w-4 h-4" /> Back to Directory
+      </Button>
+
+      {/* Profile Header */}
       <div className="kpi-card !p-6">
         <div className="flex flex-col sm:flex-row gap-5 items-start">
           <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary shrink-0">
@@ -63,21 +64,24 @@ export default function StudentProfile() {
                   {student.r1_result}
                 </span>
               )}
+              {student.r2_status && <BandBadge band={student.r2_status} />}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Assessment Cards */}
+      {/* Assessment Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Aptitude */}
         <div className="kpi-card space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Aptitude Assessment (R1A)</h3>
+          <h3 className="text-sm font-semibold text-foreground">Aptitude Assessment</h3>
           {student.r1_attendance === "Present" ? (
             <>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Score</span>
-                <span className="text-lg font-bold text-foreground">{student.aptitude_score} / {student.aptitude_max}</span>
+                <span className="text-lg font-bold text-foreground">
+                  {student.aptitude_score} / {student.aptitude_max}
+                </span>
               </div>
               <Progress value={aptPct} className="h-3" />
               <div className="flex items-center justify-between">
@@ -90,18 +94,20 @@ export default function StudentProfile() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground italic">You were marked absent for R1</p>
+            <p className="text-sm text-muted-foreground">Student was absent for R1</p>
           )}
         </div>
 
         {/* Coding */}
         <div className="kpi-card space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">Coding Assessment (R1B)</h3>
+          <h3 className="text-sm font-semibold text-foreground">Coding Assessment</h3>
           {student.r1_attendance === "Present" ? (
             <>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Score</span>
-                <span className="text-lg font-bold text-foreground">{student.coding_gained} / {student.coding_max}</span>
+                <span className="text-lg font-bold text-foreground">
+                  {student.coding_gained} / {student.coding_max}
+                </span>
               </div>
               <Progress value={codPct} className="h-3" />
               <div className="flex items-center justify-between">
@@ -114,15 +120,15 @@ export default function StudentProfile() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground italic">You were marked absent for R1</p>
+            <p className="text-sm text-muted-foreground">Student was absent for R1</p>
           )}
         </div>
       </div>
 
-      {/* Round Summary */}
+      {/* R1 & R2 Summary */}
       <div className="kpi-card">
         <h3 className="text-sm font-semibold text-foreground mb-4">Round Summary</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R1 Overall Band</div>
             {student.r1_band ? <BandBadge band={student.r1_band} /> : <span className="text-sm text-muted-foreground">—</span>}

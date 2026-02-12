@@ -1,37 +1,62 @@
-import { useState } from "react";
-import { MOCK_STUDENTS } from "@/data/mockData";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useStudents } from "@/hooks/useStudents";
 import BandBadge from "@/components/BandBadge";
-import StatusBadge from "@/components/StatusBadge";
+import YearFilter from "@/components/YearFilter";
+import LoadingState from "@/components/LoadingState";
+import ErrorState from "@/components/ErrorState";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, ChevronUp, ChevronDown, Filter } from "lucide-react";
+import { Search, Download, ChevronUp, ChevronDown } from "lucide-react";
 
-type SortKey = "name" | "employabilityScore" | "highestPackage" | "year";
+type SortKey = "student_name" | "aptitude_score" | "coding_gained" | "s_no";
 
 export default function StudentsPage() {
+  const [selectedYear, setSelectedYear] = useState("all");
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [yearFilter, setYearFilter] = useState("all");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [attendanceFilter, setAttendanceFilter] = useState("all");
+  const [resultFilter, setResultFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [assessmentView, setAssessmentView] = useState<"band" | "percentage">("band");
+  const navigate = useNavigate();
 
-  const filtered = MOCK_STUDENTS.filter((s) => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.regNumber.toLowerCase().includes(search.toLowerCase());
-    const matchDept = deptFilter === "all" || s.department === deptFilter;
-    const matchStatus = statusFilter === "all" || s.placementStatus === statusFilter;
-    const matchYear = yearFilter === "all" || s.year.toString() === yearFilter;
-    return matchSearch && matchDept && matchStatus && matchYear;
-  }).sort((a, b) => {
-    const aVal = a[sortKey];
-    const bVal = b[sortKey];
-    if (typeof aVal === "string" && typeof bVal === "string") return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-    return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-  });
+  const { students, loading, error, refetch, totalCount } = useStudents(
+    selectedYear !== "all" ? { year: selectedYear } : {}
+  );
+
+  // Get unique departments
+  const departments = useMemo(() => {
+    const depts = new Set(students.map((s) => s.department).filter(Boolean));
+    return Array.from(depts).sort();
+  }, [students]);
+
+  // Client-side filtering & sorting
+  const filtered = useMemo(() => {
+    return students
+      .filter((s) => {
+        const matchSearch = !search ||
+          s.student_name.toLowerCase().includes(search.toLowerCase()) ||
+          s.registration_number.toLowerCase().includes(search.toLowerCase()) ||
+          s.email.toLowerCase().includes(search.toLowerCase());
+        const matchDept = deptFilter === "all" || s.department === deptFilter;
+        const matchAtt = attendanceFilter === "all" || s.r1_attendance === attendanceFilter;
+        const matchResult = resultFilter === "all" || s.r1_result === resultFilter;
+        return matchSearch && matchDept && matchAtt && matchResult;
+      })
+      .sort((a, b) => {
+        const aVal = a[sortKey];
+        const bVal = b[sortKey];
+        if (aVal == null || bVal == null) return 0;
+        if (typeof aVal === "string" && typeof bVal === "string")
+          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+      });
+  }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
 
   const toggleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
   };
 
@@ -40,68 +65,72 @@ export default function StudentsPage() {
     return sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
 
+  if (loading) return <LoadingState message="Loading student directory..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Student Directory</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage and view all student records</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {totalCount.toLocaleString()} total records
+          </p>
         </div>
         <button className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
           <Download className="w-3.5 h-3.5" /> Export
         </button>
       </div>
 
+      {/* Year Filter */}
+      <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+
       {/* Filters */}
       <div className="kpi-card !p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search name or reg no..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+            <Input
+              placeholder="Search name, reg no, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
           </div>
           <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-9 w-40 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>
-              <SelectItem value="Computer Science">Computer Science</SelectItem>
-              <SelectItem value="Information Technology">Info Technology</SelectItem>
-              <SelectItem value="Electronics">Electronics</SelectItem>
-              <SelectItem value="Mechanical">Mechanical</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={yearFilter} onValueChange={setYearFilter}>
-            <SelectTrigger className="h-9 w-28 text-sm"><SelectValue placeholder="Year" /></SelectTrigger>
+          <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
+            <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              <SelectItem value="1">Year 1</SelectItem>
-              <SelectItem value="2">Year 2</SelectItem>
-              <SelectItem value="3">Year 3</SelectItem>
-              <SelectItem value="4">Year 4</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="Present">Present</SelectItem>
+              <SelectItem value="Absent">Absent</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
+          <Select value={resultFilter} onValueChange={setResultFilter}>
+            <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Placed">Placed</SelectItem>
-              <SelectItem value="Offer Received">Offer Received</SelectItem>
-              <SelectItem value="Not Placed">Not Placed</SelectItem>
-              <SelectItem value="Multiple Offers">Multiple Offers</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="PASS">Pass</SelectItem>
+              <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
           </Select>
           <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
             <button
               onClick={() => setAssessmentView("band")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Bands
-            </button>
+            >Bands</button>
             <button
               onClick={() => setAssessmentView("percentage")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Percentage
-            </button>
+            >%</button>
           </div>
         </div>
       </div>
@@ -112,61 +141,88 @@ export default function StudentsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("s_no")}>
+                  <span className="flex items-center gap-1">S.No <SortIcon col="s_no" /></span>
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Reg No.</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("name")}>
-                  <span className="flex items-center gap-1">Name <SortIcon col="name" /></span>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("student_name")}>
+                  <span className="flex items-center gap-1">Name <SortIcon col="student_name" /></span>
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Department</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("year")}>
-                  <span className="flex items-center justify-center gap-1">Year <SortIcon col="year" /></span>
-                </th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Tech Band</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1A Aptitude</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1B Coding</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Overall</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R2 In-Person</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("employabilityScore")}>
-                  <span className="flex items-center justify-center gap-1">Score <SortIcon col="employabilityScore" /></span>
-                </th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("highestPackage")}>
-                  <span className="flex items-center justify-end gap-1">Package <SortIcon col="highestPackage" /></span>
-                </th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Dept / Spec</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Section</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">R1 Att.</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Aptitude</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Coding</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Band</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Result</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R2 Status</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => (
-                <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.regNumber}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{s.department}</td>
-                  <td className="px-4 py-3 text-center">{s.year}</td>
-                  <td className="px-4 py-3 text-center"><BandBadge band={s.techBand} /></td>
-                  <td className="px-3 py-3 text-center">
-                    {assessmentView === "band" ? <BandBadge band={s.r1aAptitude.band} /> : <span className="text-sm font-medium">{s.r1aAptitude.score}%</span>}
+              {filtered.slice(0, 200).map((s) => (
+                <tr
+                  key={s.id}
+                  className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/students/${s.registration_number}`)}
+                >
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{s.s_no}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.registration_number}</td>
+                  <td className="px-4 py-3 font-medium text-primary hover:underline">{s.student_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    <div>{s.department}</div>
+                    <div className="text-[10px] opacity-70">{s.specialization}</div>
                   </td>
-                  <td className="px-3 py-3 text-center">
-                    {assessmentView === "band" ? <BandBadge band={s.r1bCoding.band} /> : <span className="text-sm font-medium">{s.r1bCoding.score}%</span>}
-                  </td>
-                  <td className="px-3 py-3 text-center"><BandBadge band={s.r1Overall} /></td>
-                  <td className="px-3 py-3 text-center">
-                    {s.r2InPerson === "—" ? <span className="text-xs text-muted-foreground">—</span> : <BandBadge band={s.r2InPerson} />}
-                  </td>
+                  <td className="px-4 py-3 text-center text-xs">{s.section}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`font-semibold ${s.employabilityScore >= 80 ? "text-success" : s.employabilityScore >= 60 ? "text-accent" : s.employabilityScore >= 40 ? "text-warning" : "text-destructive"}`}>
-                      {s.employabilityScore}
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      s.r1_attendance === "Present"
+                        ? "bg-success/10 text-success"
+                        : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {s.r1_attendance}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center"><StatusBadge status={s.placementStatus} /></td>
-                  <td className="px-4 py-3 text-right font-medium">{s.highestPackage > 0 ? `₹${s.highestPackage} LPA` : "—"}</td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r1_attendance === "Present" ? (
+                      assessmentView === "band"
+                        ? <BandBadge band={s.aptitude_band || "—"} />
+                        : <span className="text-sm font-medium">{s.aptitude_percentage || "—"}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r1_attendance === "Present" ? (
+                      assessmentView === "band"
+                        ? <BandBadge band={s.coding_band || "—"} />
+                        : <span className="text-sm font-medium">{s.coding_percentage || "—"}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r1_result ? (
+                      <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
+                        {s.r1_result}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">—</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <span>Showing {filtered.length} of {MOCK_STUDENTS.length} students</span>
-          <span>Page 1 of 1</span>
+          <span>Showing {Math.min(filtered.length, 200)} of {filtered.length} filtered ({totalCount.toLocaleString()} total)</span>
+          {filtered.length > 200 && <span className="text-warning">Refine filters to see more results</span>}
         </div>
       </div>
     </div>
