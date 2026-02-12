@@ -6,8 +6,10 @@ import BandBadge from "@/components/BandBadge";
 import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
+import ExtrapolationPanel from "@/components/ExtrapolationPanel";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Users, TrendingUp, CheckCircle, XCircle, BarChart3, BookOpen,
+  Users, TrendingUp, CheckCircle, XCircle, BarChart3, BookOpen, Brain,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -58,6 +60,22 @@ export default function AdminDashboard() {
       {/* Year Filter */}
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
+      {/* Tabs: Overview vs Intelligence */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview" className="gap-1.5">
+            <BarChart3 className="w-4 h-4" /> Overview
+          </TabsTrigger>
+          <TabsTrigger value="intelligence" className="gap-1.5">
+            <Brain className="w-4 h-4" /> Intelligence
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="intelligence">
+          <ExtrapolationPanel students={students} />
+        </TabsContent>
+
+        <TabsContent value="overview" className="space-y-6">
       {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard
@@ -240,6 +258,8 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
