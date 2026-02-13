@@ -110,34 +110,48 @@ export default function AdminDashboard() {
   const stats = useMemo(() => {
     const total = students.length;
     const specs = new Set(students.map((s) => s.specialization)).size;
+    
+    // Active Students = R1 Attendance = "Present"
     const activeCount = students.filter((s) => s.r1_attendance === "Present").length;
     const inactiveCount = students.filter((s) => s.r1_attendance === "Absent").length;
     const r1Present = students.filter((s) => s.r1_attendance === "Present").length;
     const r1Absent = total - r1Present;
     const r1Passed = students.filter(isR1Passed).length;
-    const r1Failed = r1Present - r1Passed;
+    
+    // R1 Fail = COUNT(R2 Result = 'R1-FAIL')
+    const r1Failed = students.filter((s) => s.r2_result === "R1-FAIL").length;
 
-    const r2All = students.filter((s) => s.r2_status != null);
+    const r2All = students.filter((s) => s.r2_result != null);
     const r2Conducted = r2All.length > 0;
     const r2Qualified = r1Passed;
-    const r2PresentCount = r2All.filter(isR2Present).length;
-    const r2AbsentCount = r2All.filter((s) => s.r2_status === "R2-ABSENT").length;
-    const r2PresentStudents = r2All.filter(isR2Present);
-    const r2PassedCount = r2PresentStudents.filter((s) => {
-      const cat = getR2Category(s.r2_status!);
-      return cat === "T3" || cat === "High Potential";
-    }).length;
-    const r2FailedCount = r2PresentCount - r2PassedCount;
+    
+    // R2 Present = COUNT(R2 Result IN ['R2 PASS', 'R2 FAIL'])
+    const r2PresentCount = students.filter((s) => s.r2_result === "R2 PASS" || s.r2_result === "R2 FAIL").length;
+    
+    // R2 Pass = COUNT(R2 Result = 'R2 PASS')
+    const r2PassedCount = students.filter((s) => s.r2_result === "R2 PASS").length;
+    
+    // R2 Fail = COUNT(R2 Result = 'R2 FAIL')
+    const r2FailedCount = students.filter((s) => s.r2_result === "R2 FAIL").length;
+    
     const r2Categories = computeR2Categories(students);
 
     const deptBands = departments
       .filter((d) => selectedDepts.includes(d))
       .map((dept) => {
         const ds = students.filter((s) => s.department === dept && s.r1_attendance === "Present");
-        const c1Count = ds.filter((s) => s.coding_band === "C1").length;
-        const c2Count = ds.filter((s) => s.coding_band === "C2").length;
-        const c5Count = ds.filter((s) => s.coding_band === "C5").length;
-        const c6Count = ds.filter((s) => s.coding_band === "C6").length;
+        // Upper Bands: C1 (C1.1, C1.2, C1.3) + C2 (C2.1, C2.2, C2.3)
+        const c1UpperBands = ["C1.1", "C1.2", "C1.3"];
+        const c2UpperBands = ["C2.1", "C2.2", "C2.3"];
+        const c1Count = ds.filter((s) => s.r1_band && c1UpperBands.includes(s.r1_band)).length;
+        const c2Count = ds.filter((s) => s.r1_band && c2UpperBands.includes(s.r1_band)).length;
+        
+        // Lower Bands: C5 (C5.1, C5.2, C5.3) + C6 (C6.1, C6.2, C6.3)
+        const c5LowerBands = ["C5.1", "C5.2", "C5.3"];
+        const c6LowerBands = ["C6.1", "C6.2", "C6.3"];
+        const c5Count = ds.filter((s) => s.r1_band && c5LowerBands.includes(s.r1_band)).length;
+        const c6Count = ds.filter((s) => s.r1_band && c6LowerBands.includes(s.r1_band)).length;
+        
         return {
           department: dept,
           "C1+C2": c1Count + c2Count,
@@ -151,18 +165,22 @@ export default function AdminDashboard() {
         return totalDiff !== 0 ? totalDiff : b["C1+C2"] - a["C1+C2"];
       });
 
-    // Calculate new cards: HCE, LCE, NCE, UNRATED
-    const hceCount = r2PresentStudents.filter((s) => {
-      const cat = getR2Category(s.r2_status!);
-      return cat === "T3" || cat === "High Potential";
-    }).length;
+    // Calculate new cards: HC, LC, NCE, UNRATED
+    // HC Count = COUNT(R2 Status IN [C2.1, C2.2, C2.3, C3])
+    const hcBands = ["C2.1", "C2.2", "C2.3", "C3"];
+    const hceCount = students.filter((s) => s.r2_status && hcBands.includes(s.r2_status)).length;
 
-    const r2AverageCount = r2PresentStudents.filter((s) => getR2Category(s.r2_status!) === "Average").length;
-    const r1HighBands = students.filter((s) => s.r1_attendance === "Present" && (s.coding_band === "C1" || s.coding_band === "C2")).length;
-    const lceCount = r2AverageCount + r1HighBands;
+    // LC Count = COUNT(R1 Band IN [C1.1, C1.2, C1.3, C2.1, C2.2, C2.3, C3.1, C3.2, C3.3, C4.1, C4.2, C4.3]) + COUNT(R2 Status = C4)
+    const lcBands = ["C1.1", "C1.2", "C1.3", "C2.1", "C2.2", "C2.3", "C3.1", "C3.2", "C3.3", "C4.1", "C4.2", "C4.3"];
+    const lcFromR1Band = students.filter((s) => s.r1_band && lcBands.includes(s.r1_band)).length;
+    const lcFromR2Status = students.filter((s) => s.r2_status === "C4").length;
+    const lceCount = lcFromR1Band + lcFromR2Status;
 
-    const nceCount = r1Failed + r2FailedCount;
-    const unratedCount = r1Absent;
+    // NCE Count = COUNT(R2 Result IN ['R2 FAIL', 'R1-FAIL'])
+    const nceCount = students.filter((s) => s.r2_result === "R2 FAIL" || s.r2_result === "R1-FAIL").length;
+    
+    // Unrated = COUNT(R1 Attendance = "Absent")
+    const unratedCount = inactiveCount;
 
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
@@ -173,17 +191,19 @@ export default function AdminDashboard() {
       r1PresentPct: pct(r1Present, total), r1AbsentPct: pct(r1Absent, total),
       r1Passed, r1Failed,
       r1PassedPct: pct(r1Passed, r1Present), r1FailedPct: pct(r1Failed, r1Present),
-      r2Conducted, r2Qualified, r2PresentCount, r2AbsentCount, r2PassedCount, r2FailedCount,
-      r2QualifiedPct: "100",
-      r2PresentPct: pct(r2PresentCount, r2Qualified),
-      r2PassedPct: pct(r2PassedCount, r2PresentCount),
-      r2FailedPct: pct(r2FailedCount, r2PresentCount),
+      r2Conducted, r2Qualified, r2PresentCount, r2PassedCount, r2FailedCount,
+      r2QualifiedPct: pct(r1Present, total),
+      r2PresentPct: pct(r2PresentCount, r1Present),
+      r2PassedPct: pct(r2PassedCount, r1Present),
+      r2FailedPct: pct(r2FailedCount, r1Present),
       r2Categories,
       deptBands,
       hceCount,
       lceCount,
       nceCount,
+      ncePct: pct(nceCount, total),
       unratedCount,
+      unratedPct: pct(unratedCount, total),
     };
   }, [students, departments, selectedDepts]);
 
@@ -268,8 +288,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={stats.total > 0 ? `${((stats.hceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="success" subtitle="R2 C2.1-C3" />
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={stats.total > 0 ? `${((stats.lceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="warning" subtitle="R2 C4 & R1 C1-C2" />
-          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={stats.total > 0 ? `${((stats.nceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="danger" subtitle="R1 & R2 Failed" />
-          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={stats.total > 0 ? `${((stats.unratedCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="default" subtitle="R1 Absent" />
+          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" subtitle="R2 FAIL & R1-FAIL" />
+          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" subtitle="R1 Absent" />
         </div>
       </div>
 
@@ -300,7 +320,7 @@ export default function AdminDashboard() {
                 <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
-                <Bar dataKey="C1+C2" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={32} />
+                <Bar dataKey="C1+C2" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={32} label={{ position: "right", fontSize: 11, fill: "hsl(var(--foreground))" }} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -318,7 +338,7 @@ export default function AdminDashboard() {
                 <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
-                <Bar dataKey="C5+C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={32} />
+                <Bar dataKey="C5+C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={32} label={{ position: "right", fontSize: 11, fill: "hsl(var(--foreground))" }} />
               </BarChart>
             </ResponsiveContainer>
           </div>
