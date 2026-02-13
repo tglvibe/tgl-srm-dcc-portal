@@ -44,6 +44,9 @@ function ChartTooltipContent({ active, payload, label }: any) {
           </div>
         );
       })}
+      <div className="mt-2 pt-2 border-t border-border/50 text-muted-foreground">
+        Total: <span className="font-semibold text-foreground">{total.toLocaleString()}</span>
+      </div>
     </div>
   );
 }
@@ -118,15 +121,22 @@ export default function AdminDashboard() {
       .filter((d) => selectedDepts.includes(d))
       .map((dept) => {
         const ds = students.filter((s) => s.department === dept && s.r1_attendance === "Present");
+        const c1Count = ds.filter((s) => s.coding_band === "C1").length;
+        const c2Count = ds.filter((s) => s.coding_band === "C2").length;
+        const c5Count = ds.filter((s) => s.coding_band === "C5").length;
+        const c6Count = ds.filter((s) => s.coding_band === "C6").length;
         return {
           department: dept,
-          C1: ds.filter((s) => s.coding_band === "C1").length,
-          C2: ds.filter((s) => s.coding_band === "C2").length,
-          C5: ds.filter((s) => s.coding_band === "C5").length,
-          C6: ds.filter((s) => s.coding_band === "C6").length,
+          "C1+C2": c1Count + c2Count,
+          "C5+C6": c5Count + c6Count,
+          total: c1Count + c2Count + c5Count + c6Count,
         };
       })
-      .filter((d) => d.C1 + d.C2 + d.C5 + d.C6 > 0);
+      .filter((d) => d.total > 0)
+      .sort((a, b) => {
+        const totalDiff = (b["C1+C2"] + b["C5+C6"]) - (a["C1+C2"] + a["C5+C6"]);
+        return totalDiff !== 0 ? totalDiff : b["C1+C2"] - a["C1+C2"];
+      });
 
     // Calculate new cards: HCE, LCE, NCE, UNRATED
     const hceCount = r2PresentStudents.filter((s) => {
@@ -249,18 +259,17 @@ export default function AdminDashboard() {
           <div className="kpi-card">
             <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <BarChartIcon className="w-4 h-4 text-primary" />
-              R1 C1/C2 Coding Band Performance by Department
+              R1 Upper Bands (C1+C2) by Department
             </h3>
-            <p className="text-xs text-muted-foreground mb-5">Upper coding bands (C1 and C2) across departments</p>
-            <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
+            <p className="text-xs text-muted-foreground mb-5">Combined count of C1 and C2 coding bands per department</p>
+            <ResponsiveContainer width="100%" height={Math.max(280, stats.deptBands.length * 48)}>
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-                <Bar dataKey="C1" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={28} />
-                <Bar dataKey="C2" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
+                <Bar dataKey="C1+C2" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -268,18 +277,17 @@ export default function AdminDashboard() {
           <div className="kpi-card">
             <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <BarChartIcon className="w-4 h-4 text-destructive" />
-              R1 C5/C6 Coding Band Performance by Department
+              R1 Lower Bands (C5+C6) by Department
             </h3>
-            <p className="text-xs text-muted-foreground mb-5">Lower coding bands (C5 and C6) across departments</p>
-            <ResponsiveContainer width="100%" height={Math.max(260, stats.deptBands.length * 44)}>
+            <p className="text-xs text-muted-foreground mb-5">Combined count of C5 and C6 coding bands per department</p>
+            <ResponsiveContainer width="100%" height={Math.max(280, stats.deptBands.length * 48)}>
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={70} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-                <Bar dataKey="C5" fill="hsl(var(--warning))" radius={[0, 6, 6, 0]} maxBarSize={28} />
-                <Bar dataKey="C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
+                <Bar dataKey="C5+C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -326,28 +334,40 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="kpi-card flex flex-col items-center justify-center">
-              <h3 className="text-sm font-semibold text-foreground mb-4 self-start flex items-center gap-2">
+            <div className="kpi-card flex flex-col">
+              <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                 <PieChartIcon className="w-4 h-4 text-accent" />
                 R2 Distribution
               </h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={stats.r2Categories.filter((c) => c.count > 0)}
-                    cx="50%" cy="50%" innerRadius={55} outerRadius={95}
-                    dataKey="count" nameKey="category"
-                    strokeWidth={2} stroke="hsl(var(--card))"
-                    label={({ category, percentage }) => `${category} ${percentage.toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {stats.r2Categories.filter((c) => c.count > 0).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex-1 flex items-center justify-center w-full">
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={stats.r2Categories.filter((c) => c.count > 0)}
+                      cx="50%" cy="50%" innerRadius={55} outerRadius={95}
+                      dataKey="count" nameKey="category"
+                      strokeWidth={2} stroke="hsl(var(--card))"
+                      label={({ category, percentage }) => `${category} ${percentage.toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {stats.r2Categories.filter((c) => c.count > 0).map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+                {stats.r2Categories.filter((c) => c.count > 0).map((cat, i) => (
+                  <div key={cat.category} className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-xs text-foreground">
+                      {cat.category}: <span className="font-semibold">{cat.count}</span> ({cat.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
