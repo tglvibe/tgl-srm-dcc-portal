@@ -14,7 +14,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
 } from "recharts";
 import {
-  isActive, PIE_COLORS,
+  isActive, PIE_COLORS, compareCI,
   computeDeptSpecTable, computeBandDistribution,
   computeR2Categories,
 } from "@/lib/analyticsUtils";
@@ -114,7 +114,7 @@ export default function InsightsPage() {
 
   const attendancePie = useMemo(() => {
     if (selectedRound === "1") {
-      const present = students.filter((s) => s.r1_attendance === "Present").length;
+      const present = students.filter((s) => compareCI(s.r1_attendance, "Present")).length;
       return [{ name: "Present", value: present }, { name: "Absent", value: total - present }];
     }
     return [{ name: "Present", value: totals.present }, { name: "Absent", value: totals.absent }];
@@ -128,7 +128,7 @@ export default function InsightsPage() {
   const codingBands = useMemo(() => computeBandDistribution(students, "coding_band"), [students]);
   const aptitudeBands = useMemo(() => computeBandDistribution(students, "aptitude_band"), [students]);
   const r2Categories = useMemo(() => computeR2Categories(students), [students]);
-  const hasR2 = students.some((s) => s.r2_status != null);
+  const hasR2 = allStudents.some((s) => s.r2_status != null);
 
   if (loading) return <LoadingState message="Loading insights data…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;

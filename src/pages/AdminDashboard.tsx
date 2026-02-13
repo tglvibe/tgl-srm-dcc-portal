@@ -23,6 +23,18 @@ import {
 } from "@/lib/analyticsUtils";
 import type { StudentRecord } from "@/types/database";
 
+/* ─── Case-Insensitive Comparison Helper ─── */
+const compareCI = (value: string | null | undefined, target: string): boolean => {
+  if (!value) return false;
+  return value.toUpperCase().trim() === target.toUpperCase().trim();
+};
+
+const includesCI = (value: string | null | undefined, targets: string[]): boolean => {
+  if (!value) return false;
+  const normalizedValue = value.toUpperCase().trim();
+  return targets.map(t => t.toUpperCase().trim()).includes(normalizedValue);
+};
+
 /* ─── Premium Chart Tooltip ─── */
 function ChartTooltipContent({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -111,51 +123,51 @@ export default function AdminDashboard() {
     const total = students.length;
     const specs = new Set(students.map((s) => s.specialization)).size;
     
-    // Active Students = R1 Attendance = "Present"
-    const activeCount = students.filter((s) => s.r1_attendance === "Present").length;
-    const inactiveCount = students.filter((s) => s.r1_attendance === "Absent").length;
-    const r1Present = students.filter((s) => s.r1_attendance === "Present").length;
+    // Active Students = R1 Attendance = "Present" (case-insensitive)
+    const activeCount = students.filter((s) => compareCI(s.r1_attendance, "Present")).length;
+    const inactiveCount = students.filter((s) => compareCI(s.r1_attendance, "Absent")).length;
+    const r1Present = students.filter((s) => compareCI(s.r1_attendance, "Present")).length;
     const r1Absent = total - r1Present;
     const r1Passed = students.filter(isR1Passed).length;
     
-    // R1 Fail = COUNT(R1 Result = 'FAIL')
-    const r1Failed = students.filter((s) => s.r1_result === "FAIL").length;
+    // R1 Fail = COUNT(R1 Result = 'FAIL') (case-insensitive)
+    const r1Failed = students.filter((s) => compareCI(s.r1_result, "FAIL")).length;
 
-    // R2 Qualified = R2 PASS + R2 FAIL + R2-ABSENT (those who took the exam)
+    // R2 Qualified = R2 PASS + R2 FAIL + R2-ABSENT + R2-PENDING (case-insensitive)
     const r2Qualified = students.filter((s) => 
-      s.r2_result === "R2 PASS" || 
-      s.r2_result === "R2 FAIL" || 
-      s.r2_result === "R2-ABSENT" ||
-      s.r2_status === "R2-PENDING"
+      compareCI(s.r2_result, "R2 PASS") || 
+      compareCI(s.r2_result, "R2 FAIL") || 
+      compareCI(s.r2_result, "R2-ABSENT") ||
+      compareCI(s.r2_result, "R2-PENDING")
     ).length;
     const r2Conducted = r2Qualified > 0;
     
-    // R2 Present = R2 PASS + R2 FAIL (those who appeared and got results)
-    const r2PresentCount = students.filter((s) => s.r2_result === "R2 PASS" || s.r2_result === "R2 FAIL").length;
+    // R2 Present = R2 PASS + R2 FAIL (those who appeared and got results) (case-insensitive)
+    const r2PresentCount = students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")).length;
     
-    // R2 Pass = R2 PASS
-    const r2PassedCount = students.filter((s) => s.r2_result === "R2 PASS").length;
+    // R2 Pass = R2 PASS (case-insensitive)
+    const r2PassedCount = students.filter((s) => compareCI(s.r2_result, "R2 PASS")).length;
     
-    // R2 Fail = R2 FAIL
-    const r2FailedCount = students.filter((s) => s.r2_result === "R2 FAIL").length;
+    // R2 Fail = R2 FAIL (case-insensitive)
+    const r2FailedCount = students.filter((s) => compareCI(s.r2_result, "R2 FAIL")).length;
     
     const r2Categories = computeR2Categories(students);
 
     const deptBands = departments
       .filter((d) => selectedDepts.includes(d))
       .map((dept) => {
-        const ds = students.filter((s) => s.department === dept && s.r1_attendance === "Present");
+        const ds = students.filter((s) => s.department === dept && compareCI(s.r1_attendance, "Present"));
         // Upper Bands: C1 (C1.1, C1.2, C1.3) + C2 (C2.1, C2.2, C2.3)
         const c1UpperBands = ["C1.1", "C1.2", "C1.3"];
         const c2UpperBands = ["C2.1", "C2.2", "C2.3"];
-        const c1Count = ds.filter((s) => s.r1_band && c1UpperBands.includes(s.r1_band)).length;
-        const c2Count = ds.filter((s) => s.r1_band && c2UpperBands.includes(s.r1_band)).length;
+        const c1Count = ds.filter((s) => includesCI(s.r1_band, c1UpperBands)).length;
+        const c2Count = ds.filter((s) => includesCI(s.r1_band, c2UpperBands)).length;
         
         // Lower Bands: C5 (C5.1, C5.2, C5.3) + C6 (C6.1, C6.2, C6.3)
         const c5LowerBands = ["C5.1", "C5.2", "C5.3"];
         const c6LowerBands = ["C6.1", "C6.2", "C6.3"];
-        const c5Count = ds.filter((s) => s.r1_band && c5LowerBands.includes(s.r1_band)).length;
-        const c6Count = ds.filter((s) => s.r1_band && c6LowerBands.includes(s.r1_band)).length;
+        const c5Count = ds.filter((s) => includesCI(s.r1_band, c5LowerBands)).length;
+        const c6Count = ds.filter((s) => includesCI(s.r1_band, c6LowerBands)).length;
         
         return {
           department: dept,
@@ -171,11 +183,11 @@ export default function AdminDashboard() {
       });
 
     // Calculate new cards: HCE, LCE, NCE, UNRATED
-    // Use overall_category column for direct counts
-    const hceCount = students.filter((s) => s.overall_category === "HCE").length;
-    const lceCount = students.filter((s) => s.overall_category === "LCE").length;
-    const nceCount = students.filter((s) => s.overall_category === "NCE").length;
-    const unratedCount = students.filter((s) => s.overall_category === "UNRATED").length;
+    // Use overall_category column for direct counts (case-insensitive)
+    const hceCount = students.filter((s) => compareCI(s.overall_category, "HCE")).length;
+    const lceCount = students.filter((s) => compareCI(s.overall_category, "LCE")).length;
+    const nceCount = students.filter((s) => compareCI(s.overall_category, "NCE")).length;
+    const unratedCount = students.filter((s) => compareCI(s.overall_category, "UNRATED")).length;
 
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
@@ -279,14 +291,14 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
           <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openPreview("Total Students", students, `View all ${stats.total} students`)} />
           <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openPreview("Active Students (R1 Present)", students.filter((s) => s.r1_attendance === "Present"), `Showing ${stats.activeCount} present students`)} />
-          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openPreview("Inactive Students (R1 Absent)", students.filter((s) => s.r1_attendance === "Absent"), `Showing ${stats.inactiveCount} absent students`)} />
+          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openPreview("Active Students (R1 Present)", students.filter((s) => compareCI(s.r1_attendance, "Present")), `Showing ${stats.activeCount} present students`)} />
+          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openPreview("Inactive Students (R1 Absent)", students.filter((s) => compareCI(s.r1_attendance, "Absent")), `Showing ${stats.inactiveCount} absent students`)} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openPreview("HCE (High Competency)", students.filter((s) => s.overall_category === "HCE"), `Showing ${stats.hceCount} HCE students`)} />
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openPreview("LCE (Low Competency)", students.filter((s) => s.overall_category === "LCE"), `Showing ${stats.lceCount} LCE students`)} />
-          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openPreview("NCE (Not Competent)", students.filter((s) => s.overall_category === "NCE"), `Showing ${stats.nceCount} NCE students`)} />
-          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openPreview("Unrated Students", students.filter((s) => s.overall_category === "UNRATED"), `Showing ${stats.unratedCount} unrated students`)} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openPreview("HCE (High Competency)", students.filter((s) => compareCI(s.overall_category, "HCE")), `Showing ${stats.hceCount} HCE students`)} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openPreview("LCE (Low Competency)", students.filter((s) => compareCI(s.overall_category, "LCE")), `Showing ${stats.lceCount} LCE students`)} />
+          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openPreview("NCE (Not Competent)", students.filter((s) => compareCI(s.overall_category, "NCE")), `Showing ${stats.nceCount} NCE students`)} />
+          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openPreview("Unrated Students", students.filter((s) => compareCI(s.overall_category, "UNRATED")), `Showing ${stats.unratedCount} unrated students`)} />
         </div>
       </div>
 
@@ -294,8 +306,8 @@ export default function AdminDashboard() {
       <div>
         <SectionHeader title="Round 1 Assessment" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openPreview("R1 Present Students", students.filter((s) => s.r1_attendance === "Present"), `${stats.r1Present} students attended Round 1`)} />
-          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openPreview("R1 Absent Students", students.filter((s) => s.r1_attendance === "Absent"), `${stats.r1Absent} students did not attend Round 1`)} />
+          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openPreview("R1 Present Students", students.filter((s) => compareCI(s.r1_attendance, "Present")), `${stats.r1Present} students attended Round 1`)} />
+          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openPreview("R1 Absent Students", students.filter((s) => compareCI(s.r1_attendance, "Absent")), `${stats.r1Absent} students did not attend Round 1`)} />
           <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openPreview("R1 Passed Students", students.filter(isR1Passed), `${stats.r1Passed} students passed Round 1`)} />
           <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openPreview("R1 Failed Students", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"), `${stats.r1Failed} students failed Round 1`)} />
         </div>
