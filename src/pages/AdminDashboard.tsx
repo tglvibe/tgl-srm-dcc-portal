@@ -10,6 +10,7 @@ import ExportDialog from "@/components/ExportDialog";
 import {
   Lightbulb, Users, BookOpen, UserCheck, UserX,
   CheckCircle, XCircle, Eye, EyeOff, Award, ShieldCheck, ShieldX, UserPlus,
+  AlertCircle, HelpCircle,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -101,6 +102,19 @@ export default function AdminDashboard() {
       })
       .filter((d) => d.C1 + d.C2 + d.C5 + d.C6 > 0);
 
+    // Calculate new cards: HCE, LCE, NCE, UNRATED
+    const hceCount = r2PresentStudents.filter((s) => {
+      const cat = getR2Category(s.r2_status!);
+      return cat === "T3" || cat === "High Potential";
+    }).length;
+
+    const r2AverageCount = r2PresentStudents.filter((s) => getR2Category(s.r2_status!) === "Average").length;
+    const r1HighBands = students.filter((s) => s.r1_attendance === "Present" && (s.coding_band === "C1" || s.coding_band === "C2")).length;
+    const lceCount = r2AverageCount + r1HighBands;
+
+    const nceCount = r1Failed + r2FailedCount;
+    const unratedCount = r1Absent;
+
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
     return {
@@ -117,6 +131,10 @@ export default function AdminDashboard() {
       r2FailedPct: pct(r2FailedCount, r2PresentCount),
       r2Categories,
       deptBands,
+      hceCount,
+      lceCount,
+      nceCount,
+      unratedCount,
     };
   }, [students, departments, selectedDepts]);
 
@@ -152,24 +170,34 @@ export default function AdminDashboard() {
       </div>
 
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
-      <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} />
+      <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} label="Departments" />
 
       {/* ─── Batch Overview ─── */}
-      <SectionHeader title="Batch Overview" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
-        <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-        <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter(isActive))} />
-        <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => !isActive(s)))} />
+      <div>
+        <SectionHeader title="Batch Overview" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
+          <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
+          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter(isActive))} />
+          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => !isActive(s)))} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={stats.total > 0 ? `${((stats.hceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="success" subtitle="R2 C2.1-C3" />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={stats.total > 0 ? `${((stats.lceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="warning" subtitle="R2 C4 & R1 C1-C2" />
+          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={stats.total > 0 ? `${((stats.nceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="danger" subtitle="R1 & R2 Failed" />
+          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={stats.total > 0 ? `${((stats.unratedCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="default" subtitle="R1 Absent" />
+        </div>
       </div>
 
       {/* ─── Round 1 Cards ─── */}
-      <SectionHeader title="Round 1 Assessment" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))} />
-        <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))} />
-        <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))} />
-        <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"))} />
+      <div>
+        <SectionHeader title="Round 1 Assessment" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))} />
+          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))} />
+          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))} />
+          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"))} />
+        </div>
       </div>
 
       {/* ─── R1 Department Charts (right after R1 cards) ─── */}
@@ -217,9 +245,9 @@ export default function AdminDashboard() {
 
       {/* ─── Round 2 Section ─── */}
       {stats.r2Conducted && (
-        <>
+        <div>
           <SectionHeader title="Round 2 Assessment" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
             <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" />
             <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" />
             <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" />
@@ -279,7 +307,7 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {exportCtx && (
@@ -300,12 +328,8 @@ import { BarChart3 as BarChartIcon, PieChart as PieChartIcon } from "lucide-reac
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-3 pt-2">
-      <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
-      <span className="text-xs font-bold text-muted-foreground px-4 py-1.5 rounded-full bg-muted/60 border border-border/60 uppercase tracking-widest">
-        {title}
-      </span>
-      <div className="h-px flex-1 bg-gradient-to-l from-border to-transparent" />
-    </div>
+    <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
+      {title}
+    </span>
   );
 }

@@ -5,8 +5,9 @@ interface StatCardProps {
   value: string | number;
   label: string;
   percentage?: string;
+  subtitle?: string;
   onClick?: () => void;
-  variant?: "default" | "success" | "danger" | "info";
+  variant?: "default" | "success" | "danger" | "info" | "warning";
   icon?: ReactNode;
 }
 
@@ -35,9 +36,15 @@ const variantStyles = {
     iconColor: "text-accent",
     pctColor: "text-accent",
   },
+  warning: {
+    border: "border-l-warning",
+    iconBg: "bg-warning/10",
+    iconColor: "text-warning",
+    pctColor: "text-warning",
+  },
 };
 
-export default function StatCard({ value, label, percentage, onClick, variant = "default", icon }: StatCardProps) {
+export default function StatCard({ value, label, percentage, subtitle, onClick, variant = "default", icon }: StatCardProps) {
   const style = variantStyles[variant];
 
   return (
@@ -65,6 +72,7 @@ export default function StatCard({ value, label, percentage, onClick, variant = 
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
       <div className="text-[11px] text-muted-foreground mt-1.5 font-medium uppercase tracking-wider">{label}</div>
+      {subtitle && <div className="text-[10px] text-muted-foreground/70 mt-1">{subtitle}</div>}
     </div>
   );
 }
