@@ -16,7 +16,7 @@ export default function MultiSelectFilter({
   onChange,
   itemCounts = {},
 }: MultiSelectFilterProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const allSelected = selected.length === items.length && items.length > 0;
   const noneSelected = selected.length === 0;
 
