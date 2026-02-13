@@ -25,6 +25,11 @@ interface ExportDialogProps {
 
 type SortKey = "student_name" | "s_no" | "department" | "coding_percentage";
 
+const compareCI = (value: string | null | undefined, target: string): boolean => {
+  if (!value) return false;
+  return value.toUpperCase().trim() === target.toUpperCase().trim();
+};
+
 function exportCSV(students: StudentRecord[], filename: string) {
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
@@ -88,6 +93,21 @@ export default function ExportDialog({ open, label, students, year, round = "1",
     return Array.from(depts).sort();
   }, [students]);
 
+  const attendanceOptions = useMemo(() => {
+    const opts = new Set(students.map((s) => s.r1_attendance).filter(Boolean));
+    return Array.from(opts).sort();
+  }, [students]);
+
+  const resultOptions = useMemo(() => {
+    const opts = new Set(students.map((s) => s.r1_result).filter(Boolean));
+    return Array.from(opts).sort();
+  }, [students]);
+
+  const r2ResultOptions = useMemo(() => {
+    const opts = new Set(students.map((s) => s.r2_result).filter(Boolean));
+    return Array.from(opts).sort();
+  }, [students]);
+
   const filtered = useMemo(() => {
     return students
       .filter((s) => {
@@ -96,9 +116,9 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           s.registration_number?.toLowerCase().includes(search.toLowerCase()) ||
           s.email?.toLowerCase().includes(search.toLowerCase());
         const matchDept = deptFilter === "all" || s.department === deptFilter;
-        const matchAtt = attendanceFilter === "all" || s.r1_attendance === attendanceFilter;
-        const matchResult = resultFilter === "all" || s.r1_result === resultFilter;
-        const matchR2Result = r2ResultFilter === "all" || s.r2_result === r2ResultFilter;
+        const matchAtt = attendanceFilter === "all" || compareCI(s.r1_attendance, attendanceFilter);
+        const matchResult = resultFilter === "all" || compareCI(s.r1_result, resultFilter);
+        const matchR2Result = r2ResultFilter === "all" || compareCI(s.r2_result, r2ResultFilter);
         return matchSearch && matchDept && matchAtt && matchResult && (round === "2" ? matchR2Result : true);
       })
       .sort((a, b) => {
@@ -205,16 +225,18 @@ export default function ExportDialog({ open, label, students, year, round = "1",
             <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="Present">Present</SelectItem>
-              <SelectItem value="Absent">Absent</SelectItem>
+              {attendanceOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={resultFilter} onValueChange={setResultFilter}>
             <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="PASS">Pass</SelectItem>
-              <SelectItem value="FAIL">Fail</SelectItem>
+              {resultOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {round === "2" && (
@@ -222,10 +244,9 @@ export default function ExportDialog({ open, label, students, year, round = "1",
               <SelectTrigger className="h-9 w-40 text-sm"><SelectValue placeholder="R2 Result" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All R2 Results</SelectItem>
-                <SelectItem value="R2 PASS">R2 Pass</SelectItem>
-                <SelectItem value="R2 FAIL">R2 Fail</SelectItem>
-                <SelectItem value="R2-ABSENT">R2 Absent</SelectItem>
-                <SelectItem value="R2-PENDING">R2 Pending</SelectItem>
+                {r2ResultOptions.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           )}
@@ -257,7 +278,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                 {round === "2" && (
                   <>
                     <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Result</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Band</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Status</th>
                   </>
                 )}
               </tr>
@@ -286,8 +307,8 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                   </td>
                   <td className="px-3 py-2 text-center">
                     {s.r1_result ? (
-                      <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
-                        {s.r1_result === "PASS" ? "P" : "F"}
+                      <span className="text-xs font-semibold text-foreground">
+                        {s.r1_result}
                       </span>
                     ) : <span className="text-xs text-muted-foreground">–</span>}
                   </td>

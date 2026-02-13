@@ -129,13 +129,19 @@ export default function StudentProfile() {
           </div>
           <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R1 Result</div>
-            <span className={`text-lg font-bold ${student.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
+            <span className={`text-lg font-bold ${student.r1_result ? "text-success" : "text-destructive"}`}>
               {student.r1_result || "—"}
             </span>
           </div>
           <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
+            <div className="text-xs text-muted-foreground mb-2">R2 Result</div>
+            <span className="text-lg font-bold text-foreground">
+              {student.r2_result || "—"}
+            </span>
+          </div>
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R2 Status</div>
-            {student.r2_status ? <BandBadge band={student.r2_status} /> : <span className="text-sm text-muted-foreground">—</span>}
+            {student.r2_bands ? <BandBadge band={student.r2_bands} /> : <span className="text-sm text-muted-foreground">—</span>}
           </div>
           <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R1 Attendance</div>
