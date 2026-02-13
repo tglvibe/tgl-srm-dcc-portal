@@ -7,10 +7,11 @@ import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ExportDialog from "@/components/ExportDialog";
+import DataPreviewModal from "@/components/DataPreviewModal";
 import {
   Lightbulb, Users, BookOpen, UserCheck, UserX,
   CheckCircle, XCircle, Eye, EyeOff, Award, ShieldCheck, ShieldX, UserPlus,
-  AlertCircle, HelpCircle,
+  AlertCircle, HelpCircle, BarChart as BarChartIcon,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
   const [exportCtx, setExportCtx] = useState<{ label: string; students: StudentRecord[] } | null>(null);
+  const [dataPreview, setDataPreview] = useState<{ title: string; description?: string; data: StudentRecord[] } | null>(null);
 
   const { students: allStudents, loading, error, refetch } = useStudents(
     selectedYear !== "all" ? { year: selectedYear } : {}
@@ -188,6 +190,10 @@ export default function AdminDashboard() {
   if (loading) return <LoadingState message="Loading dashboard data…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
 
+  const openPreview = (title: string, data: StudentRecord[], description?: string) => {
+    setDataPreview({ title, data, description });
+  };
+
   const openExport = (label: string, filtered?: StudentRecord[]) => {
     setExportCtx({ label, students: filtered || students });
   };
@@ -231,6 +237,10 @@ export default function AdminDashboard() {
             setSelectedDepts([...departments]);
             setSelectedSpecs([...specializations]);
           }}
+          onItemClick={(dept) => {
+            const deptStudents = students.filter((s) => s.department === dept);
+            openPreview(`${dept} Department Students`, deptStudents, `${deptStudents.length} students in ${dept}`);
+          }}
         />
         <MultiSelectFilter
           label="Specializations"
@@ -239,6 +249,10 @@ export default function AdminDashboard() {
           onChange={setSelectedSpecs}
           itemCounts={specCounts}
           hideAllButton={true}
+          onItemClick={(spec) => {
+            const specStudents = students.filter((s) => s.specialization === spec);
+            openPreview(`${spec} Specialization Students`, specStudents, `${specStudents.length} students in ${spec}`);
+          }}
         />
       </div>
 
@@ -246,10 +260,10 @@ export default function AdminDashboard() {
       <div>
         <SectionHeader title="Batch Overview" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
+          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openPreview("Total Students", students, `View all ${stats.total} students`)} />
           <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter((s) => s.r1_attendance === "Present"))} />
-          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => s.r1_attendance === "Absent"))} />
+          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openPreview("Active Students (R1 Present)", students.filter((s) => s.r1_attendance === "Present"), `Showing ${stats.activeCount} present students`)} />
+          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openPreview("Inactive Students (R1 Absent)", students.filter((s) => s.r1_attendance === "Absent"), `Showing ${stats.inactiveCount} absent students`)} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={stats.total > 0 ? `${((stats.hceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="success" subtitle="R2 C2.1-C3" />
@@ -263,10 +277,10 @@ export default function AdminDashboard() {
       <div>
         <SectionHeader title="Round 1 Assessment" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))} />
-          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))} />
-          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))} />
-          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"))} />
+          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openPreview("R1 Present Students", students.filter((s) => s.r1_attendance === "Present"), `${stats.r1Present} students attended Round 1`)} />
+          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openPreview("R1 Absent Students", students.filter((s) => s.r1_attendance === "Absent"), `${stats.r1Absent} students did not attend Round 1`)} />
+          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openPreview("R1 Passed Students", students.filter(isR1Passed), `${stats.r1Passed} students passed Round 1`)} />
+          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openPreview("R1 Failed Students", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"), `${stats.r1Failed} students failed Round 1`)} />
         </div>
       </div>
 
@@ -399,12 +413,22 @@ export default function AdminDashboard() {
           onClose={() => setExportCtx(null)}
         />
       )}
+
+      {/* Data Preview Modal */}
+      {dataPreview && (
+        <DataPreviewModal
+          open={!!dataPreview}
+          title={dataPreview.title}
+          description={dataPreview.description}
+          data={dataPreview.data}
+          onClose={() => setDataPreview(null)}
+        />
+      )}
     </div>
   );
 }
 
 /* ─── Helpers ─── */
-import { BarChart3 as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
 
 function SectionHeader({ title }: { title: string }) {
   return (
