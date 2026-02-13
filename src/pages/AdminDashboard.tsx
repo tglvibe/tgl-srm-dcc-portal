@@ -121,17 +121,22 @@ export default function AdminDashboard() {
     // R1 Fail = COUNT(R1 Result = 'FAIL')
     const r1Failed = students.filter((s) => s.r1_result === "FAIL").length;
 
-    const r2All = students.filter((s) => s.r2_result != null);
-    const r2Conducted = r2All.length > 0;
-    const r2Qualified = r1Passed;
+    // R2 Qualified = R2 PASS + R2 FAIL + R2-ABSENT (those who took the exam)
+    const r2Qualified = students.filter((s) => 
+      s.r2_result === "R2 PASS" || 
+      s.r2_result === "R2 FAIL" || 
+      s.r2_result === "R2-ABSENT" ||
+      s.r2_status === "R2-PENDING"
+    ).length;
+    const r2Conducted = r2Qualified > 0;
     
-    // R2 Present = COUNT(R2 Result IN ['R2 PASS', 'R2 FAIL'])
+    // R2 Present = R2 PASS + R2 FAIL (those who appeared and got results)
     const r2PresentCount = students.filter((s) => s.r2_result === "R2 PASS" || s.r2_result === "R2 FAIL").length;
     
-    // R2 Pass = COUNT(R2 Result = 'R2 PASS')
+    // R2 Pass = R2 PASS
     const r2PassedCount = students.filter((s) => s.r2_result === "R2 PASS").length;
     
-    // R2 Fail = COUNT(R2 Result = 'R2 FAIL')
+    // R2 Fail = R2 FAIL
     const r2FailedCount = students.filter((s) => s.r2_result === "R2 FAIL").length;
     
     const r2Categories = computeR2Categories(students);
@@ -165,12 +170,12 @@ export default function AdminDashboard() {
         return totalDiff !== 0 ? totalDiff : b["C1+C2"] - a["C1+C2"];
       });
 
-    // Calculate new cards: HC, LC, NC, UNRATED
+    // Calculate new cards: HCE, LCE, NCE, UNRATED
     // Use overall_category column for direct counts
-    const hceCount = students.filter((s) => s.overall_category === "HC").length;
-    const lceCount = students.filter((s) => s.overall_category === "LC").length;
-    const nceCount = students.filter((s) => s.overall_category === "NC").length;
-    const unratedCount = students.filter((s) => s.overall_category === "Unrated").length;
+    const hceCount = students.filter((s) => s.overall_category === "HCE").length;
+    const lceCount = students.filter((s) => s.overall_category === "LCE").length;
+    const nceCount = students.filter((s) => s.overall_category === "NCE").length;
+    const unratedCount = students.filter((s) => s.overall_category === "UNRATED").length;
 
     const pct = (n: number, d: number) => (d > 0 ? ((n / d) * 100).toFixed(0) : "0");
 
@@ -182,10 +187,10 @@ export default function AdminDashboard() {
       r1Passed, r1Failed,
       r1PassedPct: pct(r1Passed, r1Present), r1FailedPct: pct(r1Failed, r1Present),
       r2Conducted, r2Qualified, r2PresentCount, r2PassedCount, r2FailedCount,
-      r2QualifiedPct: pct(r1Present, total),
-      r2PresentPct: pct(r2PresentCount, r1Present),
-      r2PassedPct: pct(r2PassedCount, r1Present),
-      r2FailedPct: pct(r2FailedCount, r1Present),
+      r2QualifiedPct: pct(r2Qualified, total),
+      r2PresentPct: pct(r2PresentCount, r2Qualified),
+      r2PassedPct: pct(r2PassedCount, r2PresentCount),
+      r2FailedPct: pct(r2FailedCount, r2PresentCount),
       r2Categories,
       deptBands,
       hceCount,
@@ -278,10 +283,10 @@ export default function AdminDashboard() {
           <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openPreview("Inactive Students (R1 Absent)", students.filter((s) => s.r1_attendance === "Absent"), `Showing ${stats.inactiveCount} absent students`)} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openPreview("HCE (High Competency)", students.filter((s) => s.overall_category === "HC"), `Showing ${stats.hceCount} HCE students`)} />
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openPreview("LCE (Low Competency)", students.filter((s) => s.overall_category === "LC"), `Showing ${stats.lceCount} LCE students`)} />
-          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openPreview("NCE (Not Competent)", students.filter((s) => s.overall_category === "NC"), `Showing ${stats.nceCount} NCE students`)} />
-          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openPreview("Unrated Students", students.filter((s) => s.overall_category === "Unrated"), `Showing ${stats.unratedCount} unrated students`)} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openPreview("HCE (High Competency)", students.filter((s) => s.overall_category === "HCE"), `Showing ${stats.hceCount} HCE students`)} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openPreview("LCE (Low Competency)", students.filter((s) => s.overall_category === "LCE"), `Showing ${stats.lceCount} LCE students`)} />
+          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openPreview("NCE (Not Competent)", students.filter((s) => s.overall_category === "NCE"), `Showing ${stats.nceCount} NCE students`)} />
+          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openPreview("Unrated Students", students.filter((s) => s.overall_category === "UNRATED"), `Showing ${stats.unratedCount} unrated students`)} />
         </div>
       </div>
 

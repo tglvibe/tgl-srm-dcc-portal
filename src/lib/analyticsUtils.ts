@@ -39,13 +39,18 @@ export function getR2Category(r2Status: string): string | null {
 }
 
 export function computeR2Categories(students: StudentRecord[]) {
+  // Total denominator = R2 PASS + R2 FAIL (those who appeared and got results)
+  const r2Total = students.filter((s) => s.r2_result === "R2 PASS" || s.r2_result === "R2 FAIL").length;
+  
+  // Still use r2_status for categorization (T3, High Potential, etc.)
   const r2Present = students.filter(isR2Present);
+  
   return R2_CATEGORIES_ORDER.map((cat) => {
     const count = r2Present.filter((s) => getR2Category(s.r2_status!) === cat).length;
     return {
       category: cat,
       count,
-      percentage: r2Present.length > 0 ? (count / r2Present.length) * 100 : 0,
+      percentage: r2Total > 0 ? (count / r2Total) * 100 : 0,
     };
   });
 }

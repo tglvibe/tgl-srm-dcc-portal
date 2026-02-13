@@ -26,7 +26,7 @@ export interface StudentRecord {
   r2_status?: string | null; // e.g. "C2.1", "R2-ABSENT", "R2-PENDING"
   r2_result?: string | null;
   r2_category?: string | null;
-  overall_category?: string | null; // "HC" | "LC" | "NC" | "Unrated"
+  overall_category?: string | null; // "HCE" | "LCE" | "NCE" | "UNRATED"
 }
 
 export interface Database {

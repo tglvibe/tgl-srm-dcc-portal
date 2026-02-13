@@ -163,6 +163,7 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
               r2_status: r.r2_status || null,
               r2_result: r.r2_result || null,
               r2_category: r.r2_category || null,
+              overall_category: r.overall_category || null,
             } as StudentRecord;
           });
 
@@ -297,6 +298,7 @@ export function useStudent(registrationNumber: string) {
           r2_status: r.r2_status || null,
           r2_result: r.r2_result || null,
           r2_category: r.r2_category || null,
+          overall_category: r.overall_category || null,
         };
 
         setStudent(mapped);
@@ -348,6 +350,7 @@ export function useStudent(registrationNumber: string) {
             r2_status: r.r2_status || null,
             r2_result: r.r2_result || null,
             r2_category: r.r2_category || null,
+            overall_category: r.overall_category || null,
           };
           setStudent(mapped);
         }
