@@ -16,7 +16,7 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   admin: [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { label: "Students", path: "/students", icon: Users },
-    { label: "Intelligence", path: "/intelligence", icon: BrainCircuit },
+    { label: "Projections", path: "/intelligence", icon: BrainCircuit },
   ],
   student: [
     { label: "My Profile", path: "/profile", icon: User },

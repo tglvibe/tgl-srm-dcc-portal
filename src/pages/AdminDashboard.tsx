@@ -62,7 +62,18 @@ export default function AdminDashboard() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
-  const specializations = useMemo(() => Array.from(new Set(allStudents.map((s) => s.specialization))).sort(), [allStudents]);
+  
+  // Filter students by selected departments first
+  const studentsByDept = useMemo(() => {
+    if (selectedDepts.length === 0) return [];
+    return allStudents.filter((s) => selectedDepts.includes(s.department));
+  }, [allStudents, selectedDepts]);
+
+  // Specializations based on selected departments
+  const specializations = useMemo(() => {
+    const specs = Array.from(new Set(studentsByDept.map((s) => s.specialization)));
+    return specs.sort();
+  }, [studentsByDept]);
   
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
   useEffect(() => { setSelectedSpecs(specializations); }, [specializations]);
@@ -78,10 +89,10 @@ export default function AdminDashboard() {
   const specCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     specializations.forEach((spec) => {
-      counts[spec] = allStudents.filter((s) => s.specialization === spec).length;
+      counts[spec] = studentsByDept.filter((s) => s.specialization === spec).length;
     });
     return counts;
-  }, [specializations, allStudents]);
+  }, [specializations, studentsByDept]);
 
   const students = useMemo(() => {
     let filtered = allStudents;
@@ -97,8 +108,8 @@ export default function AdminDashboard() {
   const stats = useMemo(() => {
     const total = students.length;
     const specs = new Set(students.map((s) => s.specialization)).size;
-    const activeCount = students.filter(isActive).length;
-    const inactiveCount = total - activeCount;
+    const activeCount = students.filter((s) => s.r1_attendance === "Present").length;
+    const inactiveCount = students.filter((s) => s.r1_attendance === "Absent").length;
     const r1Present = students.filter((s) => s.r1_attendance === "Present").length;
     const r1Absent = total - r1Present;
     const r1Passed = students.filter(isR1Passed).length;
@@ -155,7 +166,7 @@ export default function AdminDashboard() {
 
     return {
       total, specs, activeCount, inactiveCount,
-      activePct: pct(activeCount, total), inactivePct: pct(inactiveCount, total),
+      activePct: pct(activeCount, total > 0 ? total : activeCount + inactiveCount), inactivePct: pct(inactiveCount, total > 0 ? total : activeCount + inactiveCount),
       r1Present, r1Absent,
       r1PresentPct: pct(r1Present, total), r1AbsentPct: pct(r1Absent, total),
       r1Passed, r1Failed,
@@ -207,14 +218,19 @@ export default function AdminDashboard() {
 
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
       
-      {/* Filters Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Filters Section - Compact Layout */}
+      <div className="space-y-2">
         <MultiSelectFilter
           label="Departments"
           items={departments}
           selected={selectedDepts}
           onChange={setSelectedDepts}
           itemCounts={deptCounts}
+          hideAllButton={true}
+          onSelectAll={() => {
+            setSelectedDepts([...departments]);
+            setSelectedSpecs([...specializations]);
+          }}
         />
         <MultiSelectFilter
           label="Specializations"
@@ -222,6 +238,7 @@ export default function AdminDashboard() {
           selected={selectedSpecs}
           onChange={setSelectedSpecs}
           itemCounts={specCounts}
+          hideAllButton={true}
         />
       </div>
 
@@ -231,8 +248,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
           <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
           <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter(isActive))} />
-          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => !isActive(s)))} />
+          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter((s) => s.r1_attendance === "Present"))} />
+          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => s.r1_attendance === "Absent"))} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={stats.total > 0 ? `${((stats.hceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="success" subtitle="R2 C2.1-C3" />

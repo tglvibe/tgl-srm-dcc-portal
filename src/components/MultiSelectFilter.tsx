@@ -7,6 +7,8 @@ interface MultiSelectFilterProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   itemCounts?: Record<string, number>;
+  hideAllButton?: boolean;
+  onSelectAll?: () => void;
 }
 
 export default function MultiSelectFilter({
@@ -15,8 +17,10 @@ export default function MultiSelectFilter({
   selected,
   onChange,
   itemCounts = {},
+  hideAllButton = false,
+  onSelectAll,
 }: MultiSelectFilterProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const allSelected = selected.length === items.length && items.length > 0;
   const noneSelected = selected.length === 0;
 
@@ -37,85 +41,93 @@ export default function MultiSelectFilter({
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-      {/* Header with controls */}
-      <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 flex-1 hover:opacity-75 transition-opacity"
-        >
-          <ChevronDown
-            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-              isExpanded ? "rotate-0" : "-rotate-90"
-            }`}
-          />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {label}
-          </span>
-          {!isExpanded && (
+    <div className="flex flex-col gap-2">
+      {/* Collapsed View - Header Row */}
+      {!isExpanded ? (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group flex-1 text-left"
+          >
+            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              {label}
+            </span>
             <span className="text-xs text-muted-foreground ml-auto">
               {noneSelected ? "None" : allSelected ? "All" : `${selected.length}/${items.length}`}
             </span>
+          </button>
+          {onSelectAll && (
+            <button
+              onClick={onSelectAll}
+              className="px-2 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 bg-primary text-primary-foreground shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              All
+            </button>
           )}
-        </button>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={toggleAll}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              allSelected
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={clearAll}
-            disabled={noneSelected}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              noneSelected
-                ? "text-muted-foreground/50 cursor-not-allowed"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            Clear
-          </button>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Expanded Header */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="p-1 hover:bg-muted/50 rounded transition-colors"
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground rotate-0 transition-transform" />
+            </button>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              {label}
+            </span>
+          </div>
 
-      {/* Expandable content */}
-      {isExpanded && (
-        <div className="max-h-96 overflow-y-auto p-3 space-y-2">
-          {items.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-4">
-              No items available
-            </div>
-          ) : (
-            items.map((item) => (
-              <label
-                key={item}
-                className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
+          {/* Expanded Filters Row - Inline Chips */}
+          <div className="flex flex-wrap items-center gap-2 pl-6">
+            {/* All Button - Only if not hidden */}
+            {!hideAllButton && (
+              <button
+                onClick={toggleAll}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                  allSelected
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/50"
+                }`}
               >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(item)}
-                  onChange={() => toggleItem(item)}
-                  className="w-4 h-4 rounded border-border checked:bg-primary checked:border-primary"
-                />
-                <span className="flex-1 text-sm text-foreground group-hover:text-foreground/80 transition-colors">
-                  {item}
-                </span>
+                All
+              </button>
+            )}
+
+            {/* Individual Filter Items */}
+            {items.map((item) => (
+              <button
+                key={item}
+                onClick={() => toggleItem(item)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                  selected.includes(item)
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/50"
+                }`}
+              >
+                {item}
                 {itemCounts[item] !== undefined && (
-                  <span className="text-xs font-bold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded whitespace-nowrap">
-                    {itemCounts[item]}
+                  <span className="ml-1 text-xs opacity-75">
+                    ({itemCounts[item]})
                   </span>
                 )}
-              </label>
-            ))
-          )}
-        </div>
+              </button>
+            ))}
+
+            {/* Clear Button */}
+            {!noneSelected && (
+              <button
+                onClick={clearAll}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ml-auto text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/50"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
