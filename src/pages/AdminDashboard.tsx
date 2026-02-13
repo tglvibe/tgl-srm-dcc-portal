@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useStudents } from "@/hooks/useStudents";
 import StatCard from "@/components/StatCard";
-import DepartmentFilter from "@/components/DepartmentFilter";
+import MultiSelectFilter from "@/components/MultiSelectFilter";
 import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
@@ -51,6 +51,7 @@ function ChartTooltipContent({ active, payload, label }: any) {
 export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
+  const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
   const [exportCtx, setExportCtx] = useState<{ label: string; students: StudentRecord[] } | null>(null);
 
   const { students: allStudents, loading, error, refetch } = useStudents(
@@ -58,7 +59,10 @@ export default function AdminDashboard() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+  const specializations = useMemo(() => Array.from(new Set(allStudents.map((s) => s.specialization))).sort(), [allStudents]);
+  
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
+  useEffect(() => { setSelectedSpecs(specializations); }, [specializations]);
 
   const deptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -68,10 +72,24 @@ export default function AdminDashboard() {
     return counts;
   }, [departments, allStudents]);
 
+  const specCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    specializations.forEach((spec) => {
+      counts[spec] = allStudents.filter((s) => s.specialization === spec).length;
+    });
+    return counts;
+  }, [specializations, allStudents]);
+
   const students = useMemo(() => {
-    if (selectedDepts.length === 0 || selectedDepts.length === departments.length) return allStudents;
-    return allStudents.filter((s) => selectedDepts.includes(s.department));
-  }, [allStudents, selectedDepts, departments]);
+    let filtered = allStudents;
+    if (selectedDepts.length > 0 && selectedDepts.length < departments.length) {
+      filtered = filtered.filter((s) => selectedDepts.includes(s.department));
+    }
+    if (selectedSpecs.length > 0 && selectedSpecs.length < specializations.length) {
+      filtered = filtered.filter((s) => selectedSpecs.includes(s.specialization));
+    }
+    return filtered;
+  }, [allStudents, selectedDepts, departments, selectedSpecs, specializations]);
 
   const stats = useMemo(() => {
     const total = students.length;
@@ -178,7 +196,24 @@ export default function AdminDashboard() {
       </div>
 
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
-      <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} label="Departments" deptCounts={deptCounts} />
+      
+      {/* Filters Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <MultiSelectFilter
+          label="Departments"
+          items={departments}
+          selected={selectedDepts}
+          onChange={setSelectedDepts}
+          itemCounts={deptCounts}
+        />
+        <MultiSelectFilter
+          label="Specializations"
+          items={specializations}
+          selected={selectedSpecs}
+          onChange={setSelectedSpecs}
+          itemCounts={specCounts}
+        />
+      </div>
 
       {/* ─── Batch Overview ─── */}
       <div>
