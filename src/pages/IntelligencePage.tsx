@@ -42,7 +42,7 @@ export default function IntelligencePage() {
             <BrainCircuit className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Intelligence</h1>
+            <h1 className="text-2xl font-bold text-foreground">Projections</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Extrapolation engine — projecting absentee performance from present student distributions
             </p>
