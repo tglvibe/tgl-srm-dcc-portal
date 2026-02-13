@@ -7,7 +7,7 @@ import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import ExportDialog from "@/components/ExportDialog";
-import DataPreviewModal from "@/components/DataPreviewModal";
+
 import {
   Lightbulb, Users, BookOpen, UserCheck, UserX,
   CheckCircle, XCircle, Eye, EyeOff, Award, ShieldCheck, ShieldX, UserPlus,
@@ -268,7 +268,7 @@ export default function AdminDashboard() {
           }}
           onItemClick={(dept) => {
             const deptStudents = students.filter((s) => s.department === dept);
-            openPreview(`${dept} Department Students`, deptStudents, `${deptStudents.length} students in ${dept}`);
+            openExport(`${dept} Department`);
           }}
         />
         <MultiSelectFilter
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
           hideAllButton={true}
           onItemClick={(spec) => {
             const specStudents = students.filter((s) => s.specialization === spec);
-            openPreview(`${spec} Specialization Students`, specStudents, `${specStudents.length} students in ${spec}`);
+            openExport(`${spec} Specialization`);
           }}
         />
       </div>
@@ -289,16 +289,16 @@ export default function AdminDashboard() {
       <div>
         <SectionHeader title="Batch Overview" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openPreview("Total Students", students, `View all ${stats.total} students`)} />
+          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students", students)} />
           <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openPreview("Active Students (R1 Present)", students.filter((s) => compareCI(s.r1_attendance, "Present")), `Showing ${stats.activeCount} present students`)} />
-          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openPreview("Inactive Students (R1 Absent)", students.filter((s) => compareCI(s.r1_attendance, "Absent")), `Showing ${stats.inactiveCount} absent students`)} />
+          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students (R1 Present)", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
+          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students (R1 Absent)", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openPreview("HCE (High Competency)", students.filter((s) => compareCI(s.overall_category, "HCE")), `Showing ${stats.hceCount} HCE students`)} />
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openPreview("LCE (Low Competency)", students.filter((s) => compareCI(s.overall_category, "LCE")), `Showing ${stats.lceCount} LCE students`)} />
-          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openPreview("NCE (Not Competent)", students.filter((s) => compareCI(s.overall_category, "NCE")), `Showing ${stats.nceCount} NCE students`)} />
-          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openPreview("Unrated Students", students.filter((s) => compareCI(s.overall_category, "UNRATED")), `Showing ${stats.unratedCount} unrated students`)} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openExport("HCE (High Competency)", students.filter((s) => compareCI(s.overall_category, "HCE")))} />
+          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openExport("LCE (Low Competency)", students.filter((s) => compareCI(s.overall_category, "LCE")))} />
+          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openExport("NCE (Not Competent)", students.filter((s) => compareCI(s.overall_category, "NCE")))} />
+          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openExport("Unrated Students", students.filter((s) => compareCI(s.overall_category, "UNRATED")))} />
         </div>
       </div>
 
@@ -306,10 +306,10 @@ export default function AdminDashboard() {
       <div>
         <SectionHeader title="Round 1 Assessment" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openPreview("R1 Present Students", students.filter((s) => compareCI(s.r1_attendance, "Present")), `${stats.r1Present} students attended Round 1`)} />
-          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openPreview("R1 Absent Students", students.filter((s) => compareCI(s.r1_attendance, "Absent")), `${stats.r1Absent} students did not attend Round 1`)} />
-          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openPreview("R1 Passed Students", students.filter(isR1Passed), `${stats.r1Passed} students passed Round 1`)} />
-          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openPreview("R1 Failed Students", students.filter((s) => s.r1_attendance === "Present" && s.r1_result !== "PASS"), `${stats.r1Failed} students failed Round 1`)} />
+          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present Students", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
+          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent Students", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
+          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed Students", students.filter(isR1Passed))} />
+          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed Students", students.filter((s) => compareCI(s.r1_result, "FAIL")))} />
         </div>
       </div>
 
@@ -359,14 +359,14 @@ export default function AdminDashboard() {
         <div>
           <SectionHeader title="Round 2 Assessment" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-            <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" />
-            <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" />
-            <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" />
-            <StatCard icon={<ShieldX className="w-5 h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" />
+            <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" onClick={() => openExport("R2 Qualified", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL") || compareCI(s.r2_result, "R2-ABSENT") || compareCI(s.r2_result, "R2-PENDING")))} />
+            <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" onClick={() => openExport("R2 Present", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")))} />
+            <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" onClick={() => openExport("R2 Passed", students.filter((s) => compareCI(s.r2_result, "R2 PASS")))} />
+            <StatCard icon={<ShieldX className="w-5 h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" onClick={() => openExport("R2 Failed", students.filter((s) => compareCI(s.r2_result, "R2 FAIL")))} />
           </div>
 
-          {/* R2 Category Table + Pie (right after R2 cards) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* R2 Category Table + Pie */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             <div className="kpi-card">
               <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Award className="w-4 h-4 text-accent" />
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {stats.r2Categories.map((cat, i) => (
-                    <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                    <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors cursor-pointer group" onClick={() => openExport(`R2 - ${cat.category}`, students.filter((s) => compareCI(s.r2_category, cat.category)))}>
                       <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                         {cat.category}
@@ -439,18 +439,8 @@ export default function AdminDashboard() {
           label={exportCtx.label}
           students={exportCtx.students}
           year={selectedYear}
+          round="1"
           onClose={() => setExportCtx(null)}
-        />
-      )}
-
-      {/* Data Preview Modal */}
-      {dataPreview && (
-        <DataPreviewModal
-          open={!!dataPreview}
-          title={dataPreview.title}
-          description={dataPreview.description}
-          data={dataPreview.data}
-          onClose={() => setDataPreview(null)}
         />
       )}
     </div>

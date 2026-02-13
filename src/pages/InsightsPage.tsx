@@ -128,7 +128,7 @@ export default function InsightsPage() {
   const codingBands = useMemo(() => computeBandDistribution(students, "coding_band"), [students]);
   const aptitudeBands = useMemo(() => computeBandDistribution(students, "aptitude_band"), [students]);
   const r2Categories = useMemo(() => computeR2Categories(students), [students]);
-  const hasR2 = allStudents.some((s) => s.r2_status != null);
+  const hasR2 = allStudents.some((s) => s.r2_result != null || s.r2_bands != null);
 
   if (loading) return <LoadingState message="Loading insights data…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;

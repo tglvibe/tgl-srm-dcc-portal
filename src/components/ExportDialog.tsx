@@ -29,14 +29,14 @@ function exportCSV(students: StudentRecord[], filename: string) {
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
     "Specialization", "R1 Attendance", "R1 Result", "Coding %",
-    "Coding Band", "Aptitude %", "R1 Band", "R2 Status",
+    "Coding Band", "Aptitude %", "R1 Band", "R2 Result", "R2 Band",
   ];
   const rows = students.map((s, i) => [
     i + 1, s.student_name, s.registration_number, s.email,
     s.department, s.specialization, s.r1_attendance,
     s.r1_result || "", s.coding_percentage || "",
     s.coding_band || "", s.aptitude_percentage || "",
-    s.r1_band || "", s.r2_status || "",
+    s.r1_band || "", s.r2_result || "", s.r2_bands || "",
   ]);
   const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -53,14 +53,14 @@ function exportExcel(students: StudentRecord[], filename: string) {
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
     "Specialization", "R1 Attendance", "R1 Result", "Coding %",
-    "Coding Band", "Aptitude %", "R1 Band", "R2 Status",
+    "Coding Band", "Aptitude %", "R1 Band", "R2 Result", "R2 Band",
   ];
   const rows = students.map((s, i) => [
     i + 1, s.student_name, s.registration_number, s.email,
     s.department, s.specialization, s.r1_attendance,
     s.r1_result || "", s.coding_percentage || "",
     s.coding_band || "", s.aptitude_percentage || "",
-    s.r1_band || "", s.r2_status || "",
+    s.r1_band || "", s.r2_result || "", s.r2_bands || "",
   ]);
   const tsv = [headers, ...rows].map((r) => r.join("\t")).join("\n");
   const blob = new Blob([tsv], { type: "application/vnd.ms-excel;charset=utf-8;" });
@@ -78,6 +78,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
   const [deptFilter, setDeptFilter] = useState("all");
   const [attendanceFilter, setAttendanceFilter] = useState("all");
   const [resultFilter, setResultFilter] = useState("all");
+  const [r2ResultFilter, setR2ResultFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const navigate = useNavigate();
@@ -97,7 +98,8 @@ export default function ExportDialog({ open, label, students, year, round = "1",
         const matchDept = deptFilter === "all" || s.department === deptFilter;
         const matchAtt = attendanceFilter === "all" || s.r1_attendance === attendanceFilter;
         const matchResult = resultFilter === "all" || s.r1_result === resultFilter;
-        return matchSearch && matchDept && matchAtt && matchResult;
+        const matchR2Result = r2ResultFilter === "all" || s.r2_result === r2ResultFilter;
+        return matchSearch && matchDept && matchAtt && matchResult && (round === "2" ? matchR2Result : true);
       })
       .sort((a, b) => {
         const aVal = a[sortKey];
@@ -107,7 +109,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
       });
-  }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
+  }, [students, search, deptFilter, attendanceFilter, resultFilter, r2ResultFilter, sortKey, sortDir, round]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -125,6 +127,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
     setDeptFilter("all");
     setAttendanceFilter("all");
     setResultFilter("all");
+    setR2ResultFilter("all");
     onClose();
   };
 
@@ -214,6 +217,18 @@ export default function ExportDialog({ open, label, students, year, round = "1",
               <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
           </Select>
+          {round === "2" && (
+            <Select value={r2ResultFilter} onValueChange={setR2ResultFilter}>
+              <SelectTrigger className="h-9 w-40 text-sm"><SelectValue placeholder="R2 Result" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All R2 Results</SelectItem>
+                <SelectItem value="R2 PASS">R2 Pass</SelectItem>
+                <SelectItem value="R2 FAIL">R2 Fail</SelectItem>
+                <SelectItem value="R2-ABSENT">R2 Absent</SelectItem>
+                <SelectItem value="R2-PENDING">R2 Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
@@ -239,7 +254,12 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Cod Band</th>
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Apt%</th>
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Overall</th>
-                {round === "2" && <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Status</th>}
+                {round === "2" && (
+                  <>
+                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Result</th>
+                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Band</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -280,9 +300,12 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                     {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
                   {round === "2" && (
-                    <td className="px-3 py-2 text-center">
-                      {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">–</span>}
-                    </td>
+                    <>
+                      <td className="px-3 py-2 text-center text-xs">{s.r2_result || "–"}</td>
+                      <td className="px-3 py-2 text-center">
+                        {s.r2_bands ? <BandBadge band={s.r2_bands} /> : <span className="text-xs text-muted-foreground">–</span>}
+                      </td>
+                    </>
                   )}
                 </tr>
               ))}

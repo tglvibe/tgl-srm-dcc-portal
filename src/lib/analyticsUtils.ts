@@ -121,24 +121,31 @@ export function computeDeptSpecTable(
         failedPct: present > 0 ? (failed / present) * 100 : 0,
       });
     } else {
-      // R2 Qualified = R2 PASS + R2 FAIL + R2-ABSENT + R2-PENDING (case-insensitive)
-      const r2Qualified = groupStudents.filter((s) =>
-        compareCI(s.r2_result, "R2 PASS") ||
-        compareCI(s.r2_result, "R2 FAIL") ||
-        compareCI(s.r2_result, "R2-ABSENT") ||
-        compareCI(s.r2_result, "R2-PENDING")
-      );
-      const qualified = r2Qualified.length;
-      // R2 Present = R2 PASS + R2 FAIL (case-insensitive)
-      const present = r2Qualified.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")).length;
-      const absent = r2Qualified.filter((s) => compareCI(s.r2_result, "R2-ABSENT")).length;
-      // Passed = those with category T3 or High Potential (case-insensitive)
-      const passed = r2Qualified.filter((s) => {
-        if (!s.r2_category) return false;
-        const cat = s.r2_category.toUpperCase().trim();
-        return cat === "T3" || cat === "HIGH POTENTIAL";
-      }).length;
-      const failed = present - passed;
+      // R2 Logic per formula:
+      // Qualified = Present + Absent (students with R2 data)
+      // Present = R2 PASS + R2 FAIL
+      // Absent = R2-ABSENT
+      // Passed = R2 PASS
+      // Failed = R2 FAIL
+      
+      // R2 Present = R2 PASS + R2 FAIL
+      const present = groupStudents.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")).length;
+      
+      // R2 Absent = R2-ABSENT
+      const absent = groupStudents.filter((s) => compareCI(s.r2_result, "R2-ABSENT")).length;
+      
+      // R2 Pending = R2-PENDING
+      const pending = groupStudents.filter((s) => compareCI(s.r2_result, "R2-PENDING")).length;
+      
+      // R2 Qualified = Present + Absent + Pending
+      const qualified = present + absent + pending;
+      
+      // R2 Passed = R2 PASS
+      const passed = groupStudents.filter((s) => compareCI(s.r2_result, "R2 PASS")).length;
+      
+      // R2 Failed = R2 FAIL
+      const failed = groupStudents.filter((s) => compareCI(s.r2_result, "R2 FAIL")).length;
+      
       rows.push({
         department,
         specialization,
