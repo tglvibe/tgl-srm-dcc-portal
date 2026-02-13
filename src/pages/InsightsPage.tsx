@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useStudents } from "@/hooks/useStudents";
 import YearFilter from "@/components/YearFilter";
-import DepartmentFilter from "@/components/DepartmentFilter";
+import MultiSelectFilter from "@/components/MultiSelectFilter";
 import ExportDialog from "@/components/ExportDialog";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
@@ -62,16 +62,37 @@ export default function InsightsPage() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+
+  // Filter students by selected departments first
+  const studentsByDept = useMemo(() => {
+    if (selectedDepts.length === 0) return [];
+    return allStudents.filter((s) => selectedDepts.includes(s.department));
+  }, [allStudents, selectedDepts]);
+
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
 
+  const deptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    departments.forEach((dept) => {
+      counts[dept] = allStudents.filter((s) => s.department === dept).length;
+    });
+    return counts;
+  }, [departments, allStudents]);
+
   const specializations = useMemo(() => {
-    const filtered = selectedDepts.length === departments.length
-      ? allStudents
-      : allStudents.filter((s) => selectedDepts.includes(s.department));
-    return Array.from(new Set(filtered.map((s) => s.specialization))).sort();
-  }, [allStudents, selectedDepts, departments]);
+    const specs = Array.from(new Set(studentsByDept.map((s) => s.specialization)));
+    return specs.sort();
+  }, [studentsByDept]);
 
   useEffect(() => { setSelectedSpecs(specializations); }, [specializations]);
+
+  const specCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    specializations.forEach((spec) => {
+      counts[spec] = studentsByDept.filter((s) => s.specialization === spec).length;
+    });
+    return counts;
+  }, [specializations, studentsByDept]);
 
   const students = useMemo(() => {
     let data = allStudents;
@@ -185,9 +206,27 @@ export default function InsightsPage() {
       </div>
 
       {/* Filters */}
-      <div className="space-y-3">
-        <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} label="Departments" />
-        <DepartmentFilter departments={specializations} selected={selectedSpecs} onChange={setSelectedSpecs} label="Specializations" />
+      <div className="space-y-2">
+        <MultiSelectFilter
+          label="Departments"
+          items={departments}
+          selected={selectedDepts}
+          onChange={setSelectedDepts}
+          itemCounts={deptCounts}
+          hideAllButton={true}
+          onSelectAll={() => {
+            setSelectedDepts([...departments]);
+            setSelectedSpecs([...specializations]);
+          }}
+        />
+        <MultiSelectFilter
+          label="Specializations"
+          items={specializations}
+          selected={selectedSpecs}
+          onChange={setSelectedSpecs}
+          itemCounts={specCounts}
+          hideAllButton={true}
+        />
       </div>
 
       {/* Round Toggle */}
