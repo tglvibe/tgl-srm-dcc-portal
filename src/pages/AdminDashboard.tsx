@@ -60,6 +60,14 @@ export default function AdminDashboard() {
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
 
+  const deptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    departments.forEach((dept) => {
+      counts[dept] = allStudents.filter((s) => s.department === dept).length;
+    });
+    return counts;
+  }, [departments, allStudents]);
+
   const students = useMemo(() => {
     if (selectedDepts.length === 0 || selectedDepts.length === departments.length) return allStudents;
     return allStudents.filter((s) => selectedDepts.includes(s.department));
@@ -170,7 +178,7 @@ export default function AdminDashboard() {
       </div>
 
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
-      <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} label="Departments" />
+      <DepartmentFilter departments={departments} selected={selectedDepts} onChange={setSelectedDepts} label="Departments" deptCounts={deptCounts} />
 
       {/* ─── Batch Overview ─── */}
       <div>
