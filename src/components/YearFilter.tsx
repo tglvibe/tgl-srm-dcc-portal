@@ -7,22 +7,22 @@ interface YearFilterProps {
 
 export default function YearFilter({ selectedYear, onYearChange }: YearFilterProps) {
   return (
-    <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm w-fit max-w-full overflow-x-auto">
+    <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm">
       <button
         onClick={() => onYearChange("all")}
-        className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
           selectedYear === "all"
             ? "bg-primary text-primary-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
         }`}
       >
-        All
+        All Years
       </button>
       {YEAR_OPTIONS.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onYearChange(opt.value)}
-          className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             selectedYear === opt.value
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -30,7 +30,7 @@ export default function YearFilter({ selectedYear, onYearChange }: YearFilterPro
         >
           <span className="hidden sm:inline">{opt.label}</span>
           <span className="sm:hidden">Y{opt.value === "First" ? "1" : opt.value === "Second" ? "2" : opt.value === "Third" ? "3" : "4"}</span>
-          <span className="text-xs opacity-70 ml-1 hidden sm:inline">YOP {opt.yop}</span>
+          <span className="text-xs opacity-70 ml-1.5">YOP {opt.yop}</span>
         </button>
       ))}
     </div>

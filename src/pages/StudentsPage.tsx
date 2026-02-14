@@ -26,11 +26,13 @@ export default function StudentsPage() {
     selectedYear !== "all" ? { year: selectedYear } : {}
   );
 
+  // Get unique departments
   const departments = useMemo(() => {
     const depts = new Set(students.map((s) => s.department).filter(Boolean));
     return Array.from(depts).sort();
   }, [students]);
 
+  // Client-side filtering & sorting
   const filtered = useMemo(() => {
     return students
       .filter((s) => {
@@ -67,27 +69,26 @@ export default function StudentsPage() {
   if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground">Student Directory</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Student Directory</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {totalCount.toLocaleString()} total records
           </p>
         </div>
-        <button className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors self-start sm:self-auto">
+        <button className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
           <Download className="w-3.5 h-3.5" /> Export
         </button>
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
-      </div>
+      {/* Year Filter */}
+      <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
       {/* Filters */}
-      <div className="kpi-card !p-3 sm:!p-4">
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-stretch sm:items-center">
-          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
+      <div className="kpi-card !p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search name, reg no, email..."
@@ -96,42 +97,40 @@ export default function StudentsPage() {
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Select value={deptFilter} onValueChange={setDeptFilter}>
-              <SelectTrigger className="h-9 w-full sm:w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
-              <SelectTrigger className="h-9 w-full sm:w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="Present">Present</SelectItem>
-                <SelectItem value="Absent">Absent</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={resultFilter} onValueChange={setResultFilter}>
-              <SelectTrigger className="h-9 w-full sm:w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="PASS">Pass</SelectItem>
-                <SelectItem value="FAIL">Fail</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
-              <button
-                onClick={() => setAssessmentView("band")}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >Bands</button>
-              <button
-                onClick={() => setAssessmentView("percentage")}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >%</button>
-            </div>
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="h-9 w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
+            <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="Present">Present</SelectItem>
+              <SelectItem value="Absent">Absent</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={resultFilter} onValueChange={setResultFilter}>
+            <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="PASS">Pass</SelectItem>
+              <SelectItem value="FAIL">Fail</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setAssessmentView("band")}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >Bands</button>
+            <button
+              onClick={() => setAssessmentView("percentage")}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >%</button>
           </div>
         </div>
       </div>
@@ -142,21 +141,21 @@ export default function StudentsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-3 sm:px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("s_no")}>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("s_no")}>
                   <span className="flex items-center gap-1">S.No <SortIcon col="s_no" /></span>
                 </th>
-                <th className="text-left px-3 sm:px-4 py-3 font-medium text-muted-foreground text-xs hidden sm:table-cell">Reg No.</th>
-                <th className="text-left px-3 sm:px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("student_name")}>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Reg No.</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("student_name")}>
                   <span className="flex items-center gap-1">Name <SortIcon col="student_name" /></span>
                 </th>
-                <th className="text-left px-3 sm:px-4 py-3 font-medium text-muted-foreground text-xs hidden md:table-cell">Dept / Spec</th>
-                <th className="text-center px-3 sm:px-4 py-3 font-medium text-muted-foreground text-xs hidden lg:table-cell">Section</th>
-                <th className="text-center px-3 sm:px-4 py-3 font-medium text-muted-foreground text-xs">R1</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs hidden md:table-cell">Aptitude</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs hidden md:table-cell">Coding</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs hidden sm:table-cell">R1 Band</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs hidden sm:table-cell">Result</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs hidden sm:table-cell">R2</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Dept / Spec</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Section</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">R1 Att.</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Aptitude</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Coding</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Band</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Result</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R2 Status</th>
               </tr>
             </thead>
             <tbody>
@@ -166,24 +165,24 @@ export default function StudentsPage() {
                   className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() => navigate(`/students/${s.registration_number}`)}
                 >
-                  <td className="px-3 sm:px-4 py-3 text-xs text-muted-foreground">{s.s_no}</td>
-                  <td className="px-3 sm:px-4 py-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">{s.registration_number}</td>
-                  <td className="px-3 sm:px-4 py-3 font-medium text-primary hover:underline text-xs sm:text-sm">{s.student_name}</td>
-                  <td className="px-3 sm:px-4 py-3 text-muted-foreground text-xs hidden md:table-cell">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{s.s_no}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.registration_number}</td>
+                  <td className="px-4 py-3 font-medium text-primary hover:underline">{s.student_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
                     <div>{s.department}</div>
                     <div className="text-[10px] opacity-70">{s.specialization}</div>
                   </td>
-                  <td className="px-3 sm:px-4 py-3 text-center text-xs hidden lg:table-cell">{s.section}</td>
-                  <td className="px-3 sm:px-4 py-3 text-center">
-                    <span className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-full ${
+                  <td className="px-4 py-3 text-center text-xs">{s.section}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       s.r1_attendance === "Present"
                         ? "bg-success/10 text-success"
                         : "bg-destructive/10 text-destructive"
                     }`}>
-                      {s.r1_attendance === "Present" ? "P" : "A"}
+                      {s.r1_attendance}
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-center hidden md:table-cell">
+                  <td className="px-3 py-3 text-center">
                     {s.r1_attendance === "Present" ? (
                       assessmentView === "band"
                         ? <BandBadge band={s.aptitude_band || "—"} />
@@ -192,7 +191,7 @@ export default function StudentsPage() {
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center hidden md:table-cell">
+                  <td className="px-3 py-3 text-center">
                     {s.r1_attendance === "Present" ? (
                       assessmentView === "band"
                         ? <BandBadge band={s.coding_band || "—"} />
@@ -201,10 +200,10 @@ export default function StudentsPage() {
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center hidden sm:table-cell">
+                  <td className="px-3 py-3 text-center">
                     {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
-                  <td className="px-3 py-3 text-center hidden sm:table-cell">
+                  <td className="px-3 py-3 text-center">
                     {s.r1_result ? (
                       <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
                         {s.r1_result}
@@ -213,7 +212,7 @@ export default function StudentsPage() {
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center hidden sm:table-cell">
+                  <td className="px-3 py-3 text-center">
                     {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                 </tr>
@@ -221,7 +220,7 @@ export default function StudentsPage() {
             </tbody>
           </table>
         </div>
-        <div className="p-3 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <span>Showing {Math.min(filtered.length, 200)} of {filtered.length} filtered ({totalCount.toLocaleString()} total)</span>
           {filtered.length > 200 && <span className="text-warning">Refine filters to see more results</span>}
         </div>
