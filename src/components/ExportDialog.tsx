@@ -25,23 +25,18 @@ interface ExportDialogProps {
 
 type SortKey = "student_name" | "s_no" | "department" | "coding_percentage";
 
-const compareCI = (value: string | null | undefined, target: string): boolean => {
-  if (!value) return false;
-  return value.toUpperCase().trim() === target.toUpperCase().trim();
-};
-
 function exportCSV(students: StudentRecord[], filename: string) {
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
     "Specialization", "R1 Attendance", "R1 Result", "Coding %",
-    "Coding Band", "Aptitude %", "R1 Band", "R2 Result", "R2 Band",
+    "Coding Band", "Aptitude %", "R1 Band", "R2 Status",
   ];
   const rows = students.map((s, i) => [
     i + 1, s.student_name, s.registration_number, s.email,
     s.department, s.specialization, s.r1_attendance,
     s.r1_result || "", s.coding_percentage || "",
     s.coding_band || "", s.aptitude_percentage || "",
-    s.r1_band || "", s.r2_result || "", s.r2_bands || "",
+    s.r1_band || "", s.r2_status || "",
   ]);
   const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -58,14 +53,14 @@ function exportExcel(students: StudentRecord[], filename: string) {
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
     "Specialization", "R1 Attendance", "R1 Result", "Coding %",
-    "Coding Band", "Aptitude %", "R1 Band", "R2 Result", "R2 Band",
+    "Coding Band", "Aptitude %", "R1 Band", "R2 Status",
   ];
   const rows = students.map((s, i) => [
     i + 1, s.student_name, s.registration_number, s.email,
     s.department, s.specialization, s.r1_attendance,
     s.r1_result || "", s.coding_percentage || "",
     s.coding_band || "", s.aptitude_percentage || "",
-    s.r1_band || "", s.r2_result || "", s.r2_bands || "",
+    s.r1_band || "", s.r2_status || "",
   ]);
   const tsv = [headers, ...rows].map((r) => r.join("\t")).join("\n");
   const blob = new Blob([tsv], { type: "application/vnd.ms-excel;charset=utf-8;" });
@@ -83,7 +78,6 @@ export default function ExportDialog({ open, label, students, year, round = "1",
   const [deptFilter, setDeptFilter] = useState("all");
   const [attendanceFilter, setAttendanceFilter] = useState("all");
   const [resultFilter, setResultFilter] = useState("all");
-  const [r2ResultFilter, setR2ResultFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const navigate = useNavigate();
@@ -91,21 +85,6 @@ export default function ExportDialog({ open, label, students, year, round = "1",
   const departments = useMemo(() => {
     const depts = new Set(students.map((s) => s.department).filter(Boolean));
     return Array.from(depts).sort();
-  }, [students]);
-
-  const attendanceOptions = useMemo(() => {
-    const opts = new Set(students.map((s) => s.r1_attendance).filter(Boolean));
-    return Array.from(opts).sort();
-  }, [students]);
-
-  const resultOptions = useMemo(() => {
-    const opts = new Set(students.map((s) => s.r1_result).filter(Boolean));
-    return Array.from(opts).sort();
-  }, [students]);
-
-  const r2ResultOptions = useMemo(() => {
-    const opts = new Set(students.map((s) => s.r2_result).filter(Boolean));
-    return Array.from(opts).sort();
   }, [students]);
 
   const filtered = useMemo(() => {
@@ -116,10 +95,9 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           s.registration_number?.toLowerCase().includes(search.toLowerCase()) ||
           s.email?.toLowerCase().includes(search.toLowerCase());
         const matchDept = deptFilter === "all" || s.department === deptFilter;
-        const matchAtt = attendanceFilter === "all" || compareCI(s.r1_attendance, attendanceFilter);
-        const matchResult = resultFilter === "all" || compareCI(s.r1_result, resultFilter);
-        const matchR2Result = r2ResultFilter === "all" || compareCI(s.r2_result, r2ResultFilter);
-        return matchSearch && matchDept && matchAtt && matchResult && (round === "2" ? matchR2Result : true);
+        const matchAtt = attendanceFilter === "all" || s.r1_attendance === attendanceFilter;
+        const matchResult = resultFilter === "all" || s.r1_result === resultFilter;
+        return matchSearch && matchDept && matchAtt && matchResult;
       })
       .sort((a, b) => {
         const aVal = a[sortKey];
@@ -129,7 +107,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
       });
-  }, [students, search, deptFilter, attendanceFilter, resultFilter, r2ResultFilter, sortKey, sortDir, round]);
+  }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -147,7 +125,6 @@ export default function ExportDialog({ open, label, students, year, round = "1",
     setDeptFilter("all");
     setAttendanceFilter("all");
     setResultFilter("all");
-    setR2ResultFilter("all");
     onClose();
   };
 
@@ -225,31 +202,18 @@ export default function ExportDialog({ open, label, students, year, round = "1",
             <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              {attendanceOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
+              <SelectItem value="Present">Present</SelectItem>
+              <SelectItem value="Absent">Absent</SelectItem>
             </SelectContent>
           </Select>
           <Select value={resultFilter} onValueChange={setResultFilter}>
             <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              {resultOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
+              <SelectItem value="PASS">Pass</SelectItem>
+              <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
           </Select>
-          {round === "2" && (
-            <Select value={r2ResultFilter} onValueChange={setR2ResultFilter}>
-              <SelectTrigger className="h-9 w-40 text-sm"><SelectValue placeholder="R2 Result" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All R2 Results</SelectItem>
-                {r2ResultOptions.map((opt) => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
 
         {/* Table */}
@@ -275,12 +239,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Cod Band</th>
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Apt%</th>
                 <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Overall</th>
-                {round === "2" && (
-                  <>
-                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Result</th>
-                    <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Status</th>
-                  </>
-                )}
+                {round === "2" && <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Status</th>}
               </tr>
             </thead>
             <tbody>
@@ -307,8 +266,8 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                   </td>
                   <td className="px-3 py-2 text-center">
                     {s.r1_result ? (
-                      <span className="text-xs font-semibold text-foreground">
-                        {s.r1_result}
+                      <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
+                        {s.r1_result === "PASS" ? "P" : "F"}
                       </span>
                     ) : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
@@ -321,12 +280,9 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                     {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
                   {round === "2" && (
-                    <>
-                      <td className="px-3 py-2 text-center text-xs">{s.r2_result || "–"}</td>
-                      <td className="px-3 py-2 text-center">
-                        {s.r2_bands ? <BandBadge band={s.r2_bands} /> : <span className="text-xs text-muted-foreground">–</span>}
-                      </td>
-                    </>
+                    <td className="px-3 py-2 text-center">
+                      {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">–</span>}
+                    </td>
                   )}
                 </tr>
               ))}
