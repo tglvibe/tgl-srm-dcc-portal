@@ -32,13 +32,27 @@ export default function AIChatbot() {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0); // Cooldown timer
   const scrollRef = useRef<HTMLDivElement>(null);
+  const cooldownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { students } = useStudents({});
   const analytics = useAnalytics(students);
 
   const configured = isGeminiChatConfigured();
   const presets = user?.role === "admin" ? ADMIN_PRESETS : STUDENT_PRESETS;
+
+  // Handle cooldown timer
+  useEffect(() => {
+    if (cooldownTime > 0) {
+      cooldownIntervalRef.current = setInterval(() => {
+        setCooldownTime(prev => Math.max(0, prev - 100));
+      }, 100);
+    }
+    return () => {
+      if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
+    };
+  }, [cooldownTime]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -72,11 +86,12 @@ R1 Band: ${me.r1_band} | R1 Result: ${me.r1_result} | R2 Status: ${me.r2_status 
   }
 
   async function sendMessage(text: string) {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || cooldownTime > 0) return;
     const userMsg: UIMessage = { role: "user", content: text.trim() };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+    setCooldownTime(2000); // Set 2 second cooldown
 
     const history: ChatMessage[] = [...messages, userMsg].map(m => ({
       role: m.role === "user" ? "user" : "model",
@@ -132,7 +147,8 @@ R1 Band: ${me.r1_band} | R1 Result: ${me.r1_result} | R2 Status: ${me.r2_status 
                 <button
                   key={i}
                   onClick={() => sendMessage(q)}
-                  disabled={!configured}
+                  disabled={!configured || cooldownTime > 0}
+                  title={cooldownTime > 0 ? `Wait ${(cooldownTime / 1000).toFixed(1)}s` : ""}
                   className="w-full text-left text-xs px-3 py-2 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 hover:border-border transition-colors text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {q}
@@ -182,14 +198,19 @@ R1 Band: ${me.r1_band} | R1 Result: ${me.r1_result} | R2 Status: ${me.r2_status 
               onChange={e => setInput(e.target.value)}
               placeholder="Ask about student data..."
               className="flex-1 text-xs px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-              disabled={loading}
+              disabled={loading || cooldownTime > 0}
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || cooldownTime > 0}
+              title={cooldownTime > 0 ? `Wait ${(cooldownTime / 1000).toFixed(1)}s` : ""}
               className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-40 hover:bg-primary/90 transition-colors"
             >
-              <Send className="w-4 h-4" />
+              {cooldownTime > 0 ? (
+                <span className="text-[10px] font-bold">{(cooldownTime / 1000).toFixed(1)}s</span>
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </button>
           </form>
         )}
