@@ -5,6 +5,13 @@ import { YEAR_YOP_MAP } from "@/types/database";
 
 const PAGE_SIZE = 1000;
 
+// Simple in-memory cache to avoid re-fetching the entire table on every render/click.
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const studentsCache = new Map<
+  string,
+  { ts: number; students: StudentRecord[]; totalCount: number }
+>();
+
 // Check if Supabase is properly configured
 const isSupabaseConfigured = () => {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -50,6 +57,20 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
 
     setLoading(true);
     setError(null);
+
+    // Try cache first
+    try {
+      const key = JSON.stringify(options || {});
+      const cached = studentsCache.get(key);
+      if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+        setStudents(cached.students);
+        setTotalCount(cached.totalCount);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      // ignore cache errors and continue fetching
+    }
 
     try {
       let countQuery = supabase
@@ -182,6 +203,14 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
       }
 
       setStudents(allRecords);
+
+      // store in cache
+      try {
+        const key = JSON.stringify(options || {});
+        studentsCache.set(key, { ts: Date.now(), students: allRecords, totalCount: total });
+      } catch (e) {
+        // ignore cache set errors
+      }
     } catch (err: any) {
       console.error("Failed to fetch students:", err);
       setError(err.message || "Failed to fetch student data");
@@ -204,7 +233,11 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "staging_student_assessments" },
-        () => fetchAllStudents()
+        () => {
+          // Invalidate cache on DB changes and refresh
+          try { studentsCache.clear(); } catch (e) { /* ignore */ }
+          fetchAllStudents();
+        }
       )
       .subscribe();
 
