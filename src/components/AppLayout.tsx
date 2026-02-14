@@ -4,6 +4,7 @@ import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Users, LogOut, User, BookOpen,
   GraduationCap, ChevronLeft, ChevronRight, BrainCircuit,
+  Menu, X,
 } from "lucide-react";
 
 interface NavItem {
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (!user) return null;
 
@@ -35,11 +37,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 ${
-          collapsed ? "w-16" : "w-60"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300
+          ${collapsed ? "w-16" : "w-60"}
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+        `}
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border shrink-0">
@@ -52,6 +63,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <div className="text-[10px] text-sidebar-muted truncate">Executive Portal</div>
             </div>
           )}
+          {/* Mobile close */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto p-1 rounded hover:bg-sidebar-accent/50 md:hidden"
+          >
+            <X className="w-5 h-5 text-sidebar-foreground" />
+          </button>
         </div>
 
         {/* Nav */}
@@ -62,6 +80,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${
                   isActive
                     ? "bg-sidebar-accent text-sidebar-primary font-medium"
@@ -80,7 +99,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="border-t border-sidebar-border p-3 space-y-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center p-1.5 rounded-md text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+            className="w-full hidden md:flex items-center justify-center p-1.5 rounded-md text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -110,8 +129,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main className={`flex-1 transition-all duration-300 ${collapsed ? "ml-16" : "ml-60"}`}>
-        <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
+      <main className={`flex-1 transition-all duration-300 ${collapsed ? "md:ml-16" : "md:ml-60"}`}>
+        {/* Mobile top bar */}
+        <div className="sticky top-0 z-30 flex items-center gap-3 px-4 h-14 bg-background border-b border-border md:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            <Menu className="w-5 h-5 text-foreground" />
+          </button>
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-primary" />
+            <span className="font-bold text-sm text-foreground">SRM IST</span>
+          </div>
+        </div>
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
           {children}
         </div>
       </main>

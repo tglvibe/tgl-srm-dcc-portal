@@ -40,7 +40,7 @@ function SectionHeader({ title, icon }: { title: string; icon?: React.ReactNode 
   return (
     <div className="flex items-center gap-3 pt-2">
       <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
-      <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground px-4 py-1.5 rounded-full bg-muted/60 border border-border/60 uppercase tracking-widest">
+      <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground px-3 sm:px-4 py-1.5 rounded-full bg-muted/60 border border-border/60 uppercase tracking-widest whitespace-nowrap">
         {icon}
         {title}
       </span>
@@ -63,7 +63,6 @@ export default function InsightsPage() {
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
 
-  // Filter students by selected departments first
   const studentsByDept = useMemo(() => {
     if (selectedDepts.length === 0) return [];
     return allStudents.filter((s) => selectedDepts.includes(s.department));
@@ -133,7 +132,7 @@ export default function InsightsPage() {
   if (loading) return <LoadingState message="Loading insights data…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
 
-  const openExport = (label: string) => setExportCtx({ label, students });
+  const openExport = (label: string, filteredStudents: StudentRecord[]) => setExportCtx({ label, students: filteredStudents });
 
   const handleReportClick = () => {
     const params = new URLSearchParams({
@@ -146,60 +145,62 @@ export default function InsightsPage() {
   const isR2 = selectedRound === "2";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="p-2 rounded-lg hover:bg-muted transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link to="/dashboard" className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md">
-            <TrendingUp className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md shrink-0">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Deep Insights</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Detailed analytics & performance breakdowns</p>
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Deep Insights</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Detailed analytics & breakdowns</p>
           </div>
         </div>
         <button
           onClick={handleReportClick}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+          className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg transition-all"
         >
           <FileText className="w-4 h-4" />
           PDF Report
         </button>
       </div>
 
-      <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      </div>
 
       {/* Quick Stats Bar */}
-      <div className="kpi-card flex flex-wrap items-center gap-6">
+      <div className="kpi-card flex flex-wrap items-center gap-4 sm:gap-6">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Users className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <div className="text-xl font-bold text-foreground">{total.toLocaleString()}</div>
+            <div className="text-lg sm:text-xl font-bold text-foreground">{total.toLocaleString()}</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Total</div>
           </div>
         </div>
-        <div className="w-px h-10 bg-border" />
+        <div className="w-px h-10 bg-border hidden sm:block" />
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center shrink-0">
             <UserCheck className="w-4 h-4 text-success" />
           </div>
           <div>
-            <div className="text-xl font-bold text-success">{activeCount.toLocaleString()}</div>
+            <div className="text-lg sm:text-xl font-bold text-success">{activeCount.toLocaleString()}</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Active</div>
           </div>
         </div>
-        <div className="w-px h-10 bg-border" />
+        <div className="w-px h-10 bg-border hidden sm:block" />
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
             <UserX className="w-4 h-4 text-destructive" />
           </div>
           <div>
-            <div className="text-xl font-bold text-destructive">{inactiveCount.toLocaleString()}</div>
+            <div className="text-lg sm:text-xl font-bold text-destructive">{inactiveCount.toLocaleString()}</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Inactive</div>
           </div>
         </div>
@@ -233,7 +234,7 @@ export default function InsightsPage() {
       <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm w-fit">
         <button
           onClick={() => setSelectedRound("1")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+          className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-sm font-semibold transition-all ${
             selectedRound === "1"
               ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -244,7 +245,7 @@ export default function InsightsPage() {
         <button
           onClick={() => setSelectedRound("2")}
           disabled={!hasR2}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+          className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-sm font-semibold transition-all ${
             selectedRound === "2"
               ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -256,60 +257,67 @@ export default function InsightsPage() {
 
       {/* Main Table */}
       <div className="kpi-card overflow-x-auto">
-        <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+        <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-primary" />
           Department × Specialization Breakdown
         </h3>
         <p className="text-xs text-muted-foreground mb-4">{isR2 ? "Round 2 — In-Person Monitored Coding Assessment" : "Round 1 — Aptitude + Coding Online Assessment"}</p>
-        <table className="w-full text-sm">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="border-b-2 border-border bg-muted/30">
-              <th className="text-left py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Department</th>
-              <th className="text-left py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Specialization</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Qualified</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Present</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">%</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Absent</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">%</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Passed</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">%</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Failed</th>
-              <th className="text-right py-3 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">%</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Dept</th>
+              <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">Spec</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Qual</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Pres</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">%</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden md:table-cell">Abs</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden md:table-cell">%</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Pass</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">%</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden md:table-cell">Fail</th>
+              <th className="text-right py-2 sm:py-3 px-2 sm:px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden md:table-cell">%</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={i}
-                className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer group"
-                onClick={() => openExport(`${row.department} – ${row.specialization}`)}
-              >
-                <td className="py-2.5 px-3 font-semibold text-foreground">{row.department}</td>
-                <td className="py-2.5 px-3 text-foreground">{row.specialization}</td>
-                <td className="py-2.5 px-3 text-right font-medium">{row.qualified}</td>
-                <td className="py-2.5 px-3 text-right font-medium text-success">{row.present}</td>
-                <td className="py-2.5 px-3 text-right text-muted-foreground">{row.presentPct.toFixed(0)}%</td>
-                <td className="py-2.5 px-3 text-right font-medium text-destructive">{row.absent}</td>
-                <td className="py-2.5 px-3 text-right text-muted-foreground">{row.absentPct.toFixed(0)}%</td>
-                <td className="py-2.5 px-3 text-right font-medium text-success">{row.passed}</td>
-                <td className="py-2.5 px-3 text-right text-muted-foreground">{row.passedPct.toFixed(0)}%</td>
-                <td className="py-2.5 px-3 text-right font-medium text-destructive">{row.failed}</td>
-                <td className="py-2.5 px-3 text-right text-muted-foreground">{row.failedPct.toFixed(0)}%</td>
-              </tr>
-            ))}
+            {rows.map((row, i) => {
+              // Filter students matching this row for export
+              const rowStudents = students.filter(
+                (s) => s.department === row.department && s.specialization === row.specialization
+              );
+              return (
+                <tr
+                  key={i}
+                  className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer group"
+                  onClick={() => openExport(`${row.department} – ${row.specialization}`, rowStudents)}
+                >
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 font-semibold text-foreground">{row.department}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-foreground hidden sm:table-cell">{row.specialization}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right font-medium">{row.qualified}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right font-medium text-success">{row.present}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right text-muted-foreground hidden sm:table-cell">{row.presentPct.toFixed(0)}%</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right font-medium text-destructive hidden md:table-cell">{row.absent}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right text-muted-foreground hidden md:table-cell">{row.absentPct.toFixed(0)}%</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right font-medium text-success">{row.passed}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right text-muted-foreground hidden sm:table-cell">{row.passedPct.toFixed(0)}%</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right font-medium text-destructive hidden md:table-cell">{row.failed}</td>
+                  <td className="py-2 sm:py-2.5 px-2 sm:px-3 text-right text-muted-foreground hidden md:table-cell">{row.failedPct.toFixed(0)}%</td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-border bg-muted/30 font-bold">
-              <td className="py-3 px-3" colSpan={2}>Total</td>
-              <td className="py-3 px-3 text-right">{totals.qualified}</td>
-              <td className="py-3 px-3 text-right text-success">{totals.present}</td>
-              <td className="py-3 px-3 text-right text-muted-foreground">{totals.presentPct.toFixed(0)}%</td>
-              <td className="py-3 px-3 text-right text-destructive">{totals.absent}</td>
-              <td className="py-3 px-3 text-right text-muted-foreground">{totals.absentPct.toFixed(0)}%</td>
-              <td className="py-3 px-3 text-right text-success">{totals.passed}</td>
-              <td className="py-3 px-3 text-right text-muted-foreground">{totals.passedPct.toFixed(0)}%</td>
-              <td className="py-3 px-3 text-right text-destructive">{totals.failed}</td>
-              <td className="py-3 px-3 text-right text-muted-foreground">{totals.failedPct.toFixed(0)}%</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3" colSpan={2}>Total</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right hidden sm:table-cell">{/* spacer for collapsed spec col */}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right">{totals.qualified}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-success">{totals.present}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-muted-foreground hidden sm:table-cell">{totals.presentPct.toFixed(0)}%</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-destructive hidden md:table-cell">{totals.absent}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-muted-foreground hidden md:table-cell">{totals.absentPct.toFixed(0)}%</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-success">{totals.passed}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-muted-foreground hidden sm:table-cell">{totals.passedPct.toFixed(0)}%</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-destructive hidden md:table-cell">{totals.failed}</td>
+              <td className="py-2 sm:py-3 px-2 sm:px-3 text-right text-muted-foreground hidden md:table-cell">{totals.failedPct.toFixed(0)}%</td>
             </tr>
           </tfoot>
         </table>
@@ -317,32 +325,28 @@ export default function InsightsPage() {
 
       {/* Attendance + Result Pies */}
       <SectionHeader title={isR2 ? "R2 Attendance & Results" : "R1 Attendance & Results"} icon={<PieChartIcon className="w-3.5 h-3.5" />} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <PieCard title="Attendance" data={attendancePie} colors={["hsl(var(--success))", "hsl(var(--destructive))"]} />
         <PieCard title="Results" data={resultPie} colors={["hsl(var(--success))", "hsl(var(--destructive))"]} />
       </div>
 
-      {/* Band Distributions — R1: Coding + Aptitude, R2: Coding only */}
+      {/* Band Distributions */}
       <SectionHeader
         title={isR2 ? "R2 Coding Performance" : "R1 Band Distributions"}
         icon={isR2 ? <Code2 className="w-3.5 h-3.5" /> : <Brain className="w-3.5 h-3.5" />}
       />
 
       {isR2 ? (
-        /* R2 is purely coding — no aptitude */
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BandCard title="R2 Performance Categories" icon={<Award className="w-4 h-4 text-accent" />} data={r2Categories.map(c => ({ band: c.category, count: c.count, percentage: c.percentage }))} />
-            <PieCard
-              title="R2 Category Distribution"
-              data={r2Categories.filter(c => c.count > 0).map(c => ({ name: c.category, value: c.count }))}
-              colors={PIE_COLORS}
-            />
-          </div>
-        </>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <BandCard title="R2 Performance Categories" icon={<Award className="w-4 h-4 text-accent" />} data={r2Categories.map(c => ({ band: c.category, count: c.count, percentage: c.percentage }))} />
+          <PieCard
+            title="R2 Category Distribution"
+            data={r2Categories.filter(c => c.count > 0).map(c => ({ name: c.category, value: c.count }))}
+            colors={PIE_COLORS}
+          />
+        </div>
       ) : (
-        /* R1 shows both coding + aptitude */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <BandCard title="Coding Band Distribution" icon={<Code2 className="w-4 h-4 text-primary" />} data={codingBands} />
           <BandCard title="Aptitude Band Distribution" icon={<Brain className="w-4 h-4 text-accent" />} data={aptitudeBands} />
         </div>
@@ -371,11 +375,11 @@ function PieCard({ title, data, colors }: { title: string; data: { name: string;
         <PieChartIcon className="w-4 h-4 text-accent" />
         {title}
       </h3>
-      <ResponsiveContainer width="100%" height={240}>
+      <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
             data={data.filter(d => d.value > 0)}
-            cx="50%" cy="50%" innerRadius={50} outerRadius={85}
+            cx="50%" cy="50%" innerRadius={40} outerRadius={75}
             dataKey="value" nameKey="name"
             strokeWidth={2} stroke="hsl(var(--card))"
             label={({ name, value }) => `${name}: ${value}`} labelLine={false}
@@ -398,30 +402,32 @@ function BandCard({ title, icon, data }: { title: string; icon: React.ReactNode;
         {icon}
         {title}
       </h3>
-      <table className="text-sm w-full">
-        <thead>
-          <tr className="border-b-2 border-border bg-muted/20">
-            <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Band</th>
-            <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
-            <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
-            <th className="py-2.5 px-3 text-xs text-muted-foreground w-24"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((b) => (
-            <tr key={b.band} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
-              <td className="py-2.5 px-3 font-semibold text-foreground">{b.band}</td>
-              <td className="py-2.5 px-3 text-right font-medium text-foreground">{b.count}</td>
-              <td className="py-2.5 px-3 text-right text-muted-foreground">{b.percentage.toFixed(1)}%</td>
-              <td className="py-2.5 px-3">
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary/70 rounded-full transition-all" style={{ width: `${Math.min(b.percentage, 100)}%` }} />
-                </div>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="text-sm w-full">
+          <thead>
+            <tr className="border-b-2 border-border bg-muted/20">
+              <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Band</th>
+              <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
+              <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
+              <th className="py-2.5 px-3 text-xs text-muted-foreground w-24 hidden sm:table-cell"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((b) => (
+              <tr key={b.band} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
+                <td className="py-2.5 px-3 font-semibold text-foreground">{b.band}</td>
+                <td className="py-2.5 px-3 text-right font-medium text-foreground">{b.count}</td>
+                <td className="py-2.5 px-3 text-right text-muted-foreground">{b.percentage.toFixed(1)}%</td>
+                <td className="py-2.5 px-3 hidden sm:table-cell">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/70 rounded-full transition-all" style={{ width: `${Math.min(b.percentage, 100)}%` }} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

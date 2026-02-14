@@ -193,32 +193,34 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-            <Award className="w-6 h-6 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shrink-0">
+            <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Executive Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Real-time analytics across <span className="font-semibold text-foreground">{stats.total.toLocaleString()}</span> student records
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Executive Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Real-time analytics across <span className="font-semibold text-foreground">{stats.total.toLocaleString()}</span> records
             </p>
           </div>
         </div>
         <Link
           to={`/insights?year=${selectedYear}`}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-warning to-warning/80 text-warning-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-warning to-warning/80 text-warning-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all"
         >
           <Lightbulb className="w-4 h-4" />
           Deep Insights
         </Link>
       </div>
 
-      <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      </div>
       
-      {/* Filters Section - Compact Layout */}
+      {/* Filters Section */}
       <div className="space-y-2">
         <MultiSelectFilter
           label="Departments"
@@ -245,13 +247,13 @@ export default function AdminDashboard() {
       {/* ─── Batch Overview ─── */}
       <div>
         <SectionHeader title="Batch Overview" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-3">
           <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students")} />
           <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
           <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students", students.filter((s) => s.r1_attendance === "Present"))} />
           <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students", students.filter((s) => s.r1_attendance === "Absent"))} />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-3">
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={stats.total > 0 ? `${((stats.hceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="success" subtitle="R2 C2.1-C3" />
           <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={stats.total > 0 ? `${((stats.lceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="warning" subtitle="R2 C4 & R1 C1-C2" />
           <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={stats.total > 0 ? `${((stats.nceCount / stats.total) * 100).toFixed(0)}%` : "0%"} variant="danger" subtitle="R1 & R2 Failed" />
@@ -262,7 +264,7 @@ export default function AdminDashboard() {
       {/* ─── Round 1 Cards ─── */}
       <div>
         <SectionHeader title="Round 1 Assessment" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-3">
           <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present", students.filter((s) => s.r1_attendance === "Present"))} />
           <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent", students.filter((s) => s.r1_attendance === "Absent"))} />
           <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed", students.filter(isR1Passed))} />
@@ -270,20 +272,20 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ─── R1 Department Charts (right after R1 cards) ─── */}
+      {/* ─── R1 Department Charts ─── */}
       {stats.deptBands.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="kpi-card">
-            <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+            <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <BarChartIcon className="w-4 h-4 text-primary" />
-              R1 Upper Bands (C1+C2) by Department
+              R1 Upper Bands (C1+C2) by Dept
             </h3>
-            <p className="text-xs text-muted-foreground mb-5">Combined count of C1 and C2 coding bands per department</p>
+            <p className="text-xs text-muted-foreground mb-5">Combined C1+C2 coding bands per department</p>
             <ResponsiveContainer width="100%" height={Math.max(280, stats.deptBands.length * 48)}>
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={80} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
                 <Bar dataKey="C1+C2" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={32} />
@@ -292,16 +294,16 @@ export default function AdminDashboard() {
           </div>
 
           <div className="kpi-card">
-            <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
+            <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <BarChartIcon className="w-4 h-4 text-destructive" />
-              R1 Lower Bands (C5+C6) by Department
+              R1 Lower Bands (C5+C6) by Dept
             </h3>
-            <p className="text-xs text-muted-foreground mb-5">Combined count of C5 and C6 coding bands per department</p>
+            <p className="text-xs text-muted-foreground mb-5">Combined C5+C6 coding bands per department</p>
             <ResponsiveContainer width="100%" height={Math.max(280, stats.deptBands.length * 48)}>
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={80} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
                 <Bar dataKey="C5+C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={32} />
@@ -315,41 +317,43 @@ export default function AdminDashboard() {
       {stats.r2Conducted && (
         <div>
           <SectionHeader title="Round 2 Assessment" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-3">
             <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" />
             <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" />
             <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" />
             <StatCard icon={<ShieldX className="w-5 h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" />
           </div>
 
-          {/* R2 Category Table + Pie (right after R2 cards) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* R2 Category Table + Pie */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             <div className="kpi-card">
               <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Award className="w-4 h-4 text-accent" />
                 R2 Performance Categories
               </h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-2 border-border">
-                    <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Category</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.r2Categories.map((cat, i) => (
-                    <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
-                      <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                        {cat.category}
-                      </td>
-                      <td className="py-3 px-3 text-right font-semibold text-foreground">{cat.count}</td>
-                      <td className="py-3 px-3 text-right text-muted-foreground">{cat.percentage.toFixed(1)}%</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-border">
+                      <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Category</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stats.r2Categories.map((cat, i) => (
+                      <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                        <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          {cat.category}
+                        </td>
+                        <td className="py-3 px-3 text-right font-semibold text-foreground">{cat.count}</td>
+                        <td className="py-3 px-3 text-right text-muted-foreground">{cat.percentage.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="kpi-card flex flex-col">
               <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -361,7 +365,7 @@ export default function AdminDashboard() {
                   <PieChart>
                     <Pie
                       data={stats.r2Categories.filter((c) => c.count > 0)}
-                      cx="50%" cy="50%" innerRadius={55} outerRadius={95}
+                      cx="50%" cy="50%" innerRadius={45} outerRadius={80}
                       dataKey="count" nameKey="category"
                       strokeWidth={2} stroke="hsl(var(--card))"
                       label={({ category, percentage }) => `${category} ${percentage.toFixed(0)}%`}
@@ -375,12 +379,12 @@ export default function AdminDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="w-full mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+              <div className="w-full mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-2">
                 {stats.r2Categories.filter((c) => c.count > 0).map((cat, i) => (
                   <div key={cat.category} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="text-xs text-foreground">
-                      {cat.category}: <span className="font-semibold">{cat.count}</span> ({cat.percentage.toFixed(1)}%)
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-xs text-foreground truncate">
+                      {cat.category}: <span className="font-semibold">{cat.count}</span>
                     </span>
                   </div>
                 ))}
