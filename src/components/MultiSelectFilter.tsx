@@ -9,7 +9,6 @@ interface MultiSelectFilterProps {
   itemCounts?: Record<string, number>;
   hideAllButton?: boolean;
   onSelectAll?: () => void;
-  onItemClick?: (item: string) => void;
 }
 
 export default function MultiSelectFilter({
@@ -20,7 +19,6 @@ export default function MultiSelectFilter({
   itemCounts = {},
   hideAllButton = false,
   onSelectAll,
-  onItemClick,
 }: MultiSelectFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const allSelected = selected.length === items.length && items.length > 0;
@@ -101,35 +99,22 @@ export default function MultiSelectFilter({
 
             {/* Individual Filter Items */}
             {items.map((item) => (
-              <div key={item} className="relative group">
-                <button
-                  onClick={() => toggleItem(item)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
-                    selected.includes(item)
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/50"
-                  }`}
-                >
-                  {item}
-                  {itemCounts[item] !== undefined && (
-                    <span className="ml-1 text-xs opacity-75">
-                      ({itemCounts[item]})
-                    </span>
-                  )}
-                </button>
-                {onItemClick && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onItemClick(item);
-                    }}
-                    className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded-full bg-info text-info-foreground flex items-center justify-center text-xs font-bold"
-                    title="View all students in this category"
-                  >
-                    👁️
-                  </button>
+              <button
+                key={item}
+                onClick={() => toggleItem(item)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                  selected.includes(item)
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground border border-border/50"
+                }`}
+              >
+                {item}
+                {itemCounts[item] !== undefined && (
+                  <span className="ml-1 text-xs opacity-75">
+                    ({itemCounts[item]})
+                  </span>
                 )}
-              </div>
+              </button>
             ))}
 
             {/* Clear Button */}

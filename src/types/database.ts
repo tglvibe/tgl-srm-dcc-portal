@@ -24,10 +24,8 @@ export interface StudentRecord {
   r1_band?: string | null; // e.g. "C2.2"
   r1_result?: string | null; // "PASS" | "FAIL"
   r2_status?: string | null; // e.g. "C2.1", "R2-ABSENT", "R2-PENDING"
-  r2_bands?: string | null; // R2 performance bands (e.g., "T3", "High Potential", etc.)
   r2_result?: string | null;
   r2_category?: string | null;
-  overall_category?: string | null; // "HCE" | "LCE" | "NCE" | "UNRATED"
 }
 
 export interface Database {

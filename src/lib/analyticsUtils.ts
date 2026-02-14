@@ -1,11 +1,5 @@
 import type { StudentRecord } from "@/types/database";
 
-/* ─── Case-Insensitive Comparison Helpers ─── */
-export const compareCI = (value: string | null | undefined, target: string): boolean => {
-  if (!value) return false;
-  return value.toUpperCase().trim() === target.toUpperCase().trim();
-};
-
 export const R2_CATEGORY_MAP: Record<string, string> = {
   "C2.1": "T3",
   "C2.2": "T3",
@@ -15,7 +9,7 @@ export const R2_CATEGORY_MAP: Record<string, string> = {
   "C6": "Poor",
 };
 
-export const R2_CATEGORIES_ORDER = ["T3", "High Potential", "Average Potential", "Below Average", "Poor"];
+export const R2_CATEGORIES_ORDER = ["T3", "High Potential", "Average", "Below Average", "Poor"];
 
 export const PIE_COLORS = [
   "hsl(199,89%,48%)",
@@ -29,15 +23,15 @@ export const PIE_COLORS = [
 ];
 
 export function isActive(s: StudentRecord): boolean {
-  return compareCI(s.r1_attendance, "Present") || s.r2_status != null;
+  return s.r1_attendance === "Present" || s.r2_status != null;
 }
 
 export function isR1Passed(s: StudentRecord): boolean {
-  return compareCI(s.r1_result, "PASS");
+  return s.r1_result === "PASS";
 }
 
 export function isR2Present(s: StudentRecord): boolean {
-  return s.r2_status != null && !compareCI(s.r2_status, "R2-ABSENT") && !compareCI(s.r2_status, "R2-PENDING");
+  return s.r2_status != null && s.r2_status !== "R2-ABSENT" && s.r2_status !== "R2-PENDING";
 }
 
 export function getR2Category(r2Status: string): string | null {
@@ -45,28 +39,13 @@ export function getR2Category(r2Status: string): string | null {
 }
 
 export function computeR2Categories(students: StudentRecord[]) {
-  // R2 Present = R2 PASS + R2 FAIL (case-insensitive)
-  const r2Present = students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL"));
-  
-  const r2Total = r2Present.length;
-  
-  // Count students by r2_category
-  const categoryMap = new Map<string, number>();
-  r2Present.forEach((s) => {
-    if (s.r2_category) {
-      const normalized = s.r2_category.toUpperCase().trim();
-      categoryMap.set(normalized, (categoryMap.get(normalized) || 0) + 1);
-    }
-  });
-  
-  // Return all categories in consistent order, including 0-count categories
+  const r2Present = students.filter(isR2Present);
   return R2_CATEGORIES_ORDER.map((cat) => {
-    const normalized = cat.toUpperCase();
-    const count = categoryMap.get(normalized) || 0;
+    const count = r2Present.filter((s) => getR2Category(s.r2_status!) === cat).length;
     return {
       category: cat,
       count,
-      percentage: r2Total > 0 ? (count / r2Total) * 100 : 0,
+      percentage: r2Present.length > 0 ? (count / r2Present.length) * 100 : 0,
     };
   });
 }
@@ -103,9 +82,9 @@ export function computeDeptSpecTable(
 
     if (round === "1") {
       const qualified = groupStudents.length;
-      const present = groupStudents.filter((s) => compareCI(s.r1_attendance, "Present")).length;
+      const present = groupStudents.filter((s) => s.r1_attendance === "Present").length;
       const absent = qualified - present;
-      const passed = groupStudents.filter((s) => compareCI(s.r1_result, "PASS")).length;
+      const passed = groupStudents.filter((s) => s.r1_result === "PASS").length;
       const failed = present - passed;
       rows.push({
         department,
@@ -121,31 +100,15 @@ export function computeDeptSpecTable(
         failedPct: present > 0 ? (failed / present) * 100 : 0,
       });
     } else {
-      // R2 Logic per formula:
-      // Qualified = Present + Absent (students with R2 data)
-      // Present = R2 PASS + R2 FAIL
-      // Absent = R2-ABSENT
-      // Passed = R2 PASS
-      // Failed = R2 FAIL
-      
-      // R2 Present = R2 PASS + R2 FAIL
-      const present = groupStudents.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")).length;
-      
-      // R2 Absent = R2-ABSENT
-      const absent = groupStudents.filter((s) => compareCI(s.r2_result, "R2-ABSENT")).length;
-      
-      // R2 Pending = R2-PENDING
-      const pending = groupStudents.filter((s) => compareCI(s.r2_result, "R2-PENDING")).length;
-      
-      // R2 Qualified = Present + Absent + Pending
-      const qualified = present + absent + pending;
-      
-      // R2 Passed = R2 PASS
-      const passed = groupStudents.filter((s) => compareCI(s.r2_result, "R2 PASS")).length;
-      
-      // R2 Failed = R2 FAIL
-      const failed = groupStudents.filter((s) => compareCI(s.r2_result, "R2 FAIL")).length;
-      
+      const r2Qualified = groupStudents.filter(isR1Passed);
+      const qualified = r2Qualified.length;
+      const present = r2Qualified.filter(isR2Present).length;
+      const absent = r2Qualified.filter((s) => s.r2_status === "R2-ABSENT").length;
+      const passed = r2Qualified.filter((s) => {
+        const cat = s.r2_status ? getR2Category(s.r2_status) : null;
+        return cat === "T3" || cat === "High Potential";
+      }).length;
+      const failed = present - passed;
       rows.push({
         department,
         specialization,
@@ -190,7 +153,7 @@ export function computeBandDistribution(
   field: "coding_band" | "aptitude_band",
   presentOnly = true
 ) {
-  const filtered = presentOnly ? students.filter((s) => compareCI(s.r1_attendance, "Present")) : students;
+  const filtered = presentOnly ? students.filter((s) => s.r1_attendance === "Present") : students;
   const map = new Map<string, number>();
   filtered.forEach((s) => {
     const val = s[field];
