@@ -92,19 +92,19 @@ R1 Band: ${me.r1_band} | R1 Result: ${me.r1_result} | R2 Status: ${me.r2_status 
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
         title="AI Assistant"
       >
-        <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
         {configured && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-card" />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-success border-2 border-card" />
         )}
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-4rem)] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+    <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[400px] sm:max-w-[calc(100vw-2rem)] h-[100dvh] sm:h-[560px] sm:max-h-[calc(100vh-4rem)] flex flex-col sm:rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground shrink-0">
         <Bot className="w-5 h-5" />

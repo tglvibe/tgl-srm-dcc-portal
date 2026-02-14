@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileText, Search, ChevronUp, ChevronDown, X, Eye } from "lucide-react";
+import { Download, FileText, Search, ChevronUp, ChevronDown, X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import BandBadge from "@/components/BandBadge";
 import type { StudentRecord } from "@/types/database";
 
@@ -24,6 +24,8 @@ interface ExportDialogProps {
 }
 
 type SortKey = "student_name" | "s_no" | "department" | "coding_percentage";
+
+const PAGE_SIZE = 50;
 
 function exportCSV(students: StudentRecord[], filename: string) {
   const headers = [
@@ -49,7 +51,6 @@ function exportCSV(students: StudentRecord[], filename: string) {
 }
 
 function exportExcel(students: StudentRecord[], filename: string) {
-  // Export as TSV which Excel opens natively
   const headers = [
     "S.No", "Name", "Registration Number", "Email", "Department",
     "Specialization", "R1 Attendance", "R1 Result", "Coding %",
@@ -80,6 +81,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
   const [resultFilter, setResultFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
 
   const departments = useMemo(() => {
@@ -109,6 +111,12 @@ export default function ExportDialog({ open, label, students, year, round = "1",
       });
   }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
 
+  // Reset page when filters change
+  useMemo(() => { setPage(1); }, [search, deptFilter, attendanceFilter, resultFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedStudents = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
@@ -125,6 +133,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
     setDeptFilter("all");
     setAttendanceFilter("all");
     setResultFilter("all");
+    setPage(1);
     onClose();
   };
 
@@ -138,21 +147,21 @@ export default function ExportDialog({ open, label, students, year, round = "1",
       <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Export: {label}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Export: {label}</DialogTitle>
             <DialogDescription>
               {students.length.toLocaleString()} student records found. Would you like to preview them?
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
             <Button onClick={() => setMode("preview")} className="justify-start gap-3 h-14">
-              <Eye className="w-5 h-5" />
+              <Eye className="w-5 h-5 shrink-0" />
               <div className="text-left">
                 <div className="font-medium">Preview & Export</div>
                 <div className="text-xs opacity-80">View students with search, sort & filter, then export</div>
               </div>
             </Button>
             <Button onClick={handleReport} variant="outline" className="justify-start gap-3 h-14">
-              <FileText className="w-5 h-5 text-primary" />
+              <FileText className="w-5 h-5 text-primary shrink-0" />
               <div className="text-left">
                 <div className="font-medium">Full PDF Report</div>
                 <div className="text-xs text-muted-foreground">Open printable report with charts & analysis</div>
@@ -166,12 +175,12 @@ export default function ExportDialog({ open, label, students, year, round = "1",
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-[95vw] w-[1200px] max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[98vw] sm:max-w-[95vw] w-[1200px] max-h-[90vh] flex flex-col p-3 sm:p-6">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>{label} — Student Preview</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-sm sm:text-lg">{label} — Student Preview</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
                 {filtered.length.toLocaleString()} of {students.length.toLocaleString()} records
               </DialogDescription>
             </div>
@@ -179,8 +188,8 @@ export default function ExportDialog({ open, label, students, year, round = "1",
         </DialogHeader>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center flex-shrink-0 py-2">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-stretch sm:items-center flex-shrink-0 py-2">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search name, reg no, email..."
@@ -189,31 +198,33 @@ export default function ExportDialog({ open, label, students, year, round = "1",
               className="pl-9 h-9 text-sm"
             />
           </div>
-          <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-9 w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((d) => (
-                <SelectItem key={d} value={d!}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
-            <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="Present">Present</SelectItem>
-              <SelectItem value="Absent">Absent</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={resultFilter} onValueChange={setResultFilter}>
-            <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="PASS">Pass</SelectItem>
-              <SelectItem value="FAIL">Fail</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d} value={d!}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Present">Present</SelectItem>
+                <SelectItem value="Absent">Absent</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={resultFilter} onValueChange={setResultFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="PASS">Pass</SelectItem>
+                <SelectItem value="FAIL">Fail</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Table */}
@@ -221,42 +232,40 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
               <tr className="border-b border-border">
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("s_no")}>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("s_no")}>
                   <span className="flex items-center gap-1">S.No <SortIcon col="s_no" /></span>
                 </th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground text-xs">Reg No.</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("student_name")}>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden sm:table-cell">Reg No.</th>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("student_name")}>
                   <span className="flex items-center gap-1">Name <SortIcon col="student_name" /></span>
                 </th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground text-xs">Email</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs" onClick={() => toggleSort("department")}>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden lg:table-cell">Email</th>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium text-muted-foreground cursor-pointer select-none text-xs hidden md:table-cell" onClick={() => toggleSort("department")}>
                   <span className="flex items-center gap-1">Dept <SortIcon col="department" /></span>
                 </th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground text-xs">Spec</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R1 Status</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R1 Result</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Coding%</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Cod Band</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Apt%</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">Overall</th>
-                {round === "2" && <th className="text-center px-3 py-2.5 font-medium text-muted-foreground text-xs">R2 Status</th>}
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs">R1</th>
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden sm:table-cell">Result</th>
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden md:table-cell">Coding%</th>
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden md:table-cell">Band</th>
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden lg:table-cell">Apt%</th>
+                <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs hidden lg:table-cell">Overall</th>
+                {round === "2" && <th className="text-center px-2 sm:px-3 py-2.5 font-medium text-muted-foreground text-xs">R2</th>}
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 300).map((s, i) => (
+              {paginatedStudents.map((s, i) => (
                 <tr
                   key={s.id}
                   className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer"
                   onClick={() => navigate(`/students/${s.registration_number}`)}
                 >
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{i + 1}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{s.registration_number}</td>
-                  <td className="px-3 py-2 font-medium text-primary text-xs">{s.student_name}</td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground truncate max-w-[180px]">{s.email}</td>
-                  <td className="px-3 py-2 text-xs">{s.department}</td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{s.specialization}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  <td className="px-2 sm:px-3 py-2 text-xs text-muted-foreground">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="px-2 sm:px-3 py-2 font-mono text-xs text-muted-foreground hidden sm:table-cell">{s.registration_number}</td>
+                  <td className="px-2 sm:px-3 py-2 font-medium text-primary text-xs">{s.student_name}</td>
+                  <td className="px-2 sm:px-3 py-2 text-xs text-muted-foreground truncate max-w-[180px] hidden lg:table-cell">{s.email}</td>
+                  <td className="px-2 sm:px-3 py-2 text-xs hidden md:table-cell">{s.department}</td>
+                  <td className="px-2 sm:px-3 py-2 text-center">
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
                       s.r1_attendance === "Present"
                         ? "bg-success/10 text-success"
                         : "bg-destructive/10 text-destructive"
@@ -264,23 +273,23 @@ export default function ExportDialog({ open, label, students, year, round = "1",
                       {s.r1_attendance === "Present" ? "P" : "A"}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 sm:px-3 py-2 text-center hidden sm:table-cell">
                     {s.r1_result ? (
                       <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
                         {s.r1_result === "PASS" ? "P" : "F"}
                       </span>
                     ) : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
-                  <td className="px-3 py-2 text-center text-xs">{s.coding_percentage || "–"}</td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 sm:px-3 py-2 text-center text-xs hidden md:table-cell">{s.coding_percentage || "–"}</td>
+                  <td className="px-2 sm:px-3 py-2 text-center hidden md:table-cell">
                     {s.coding_band ? <BandBadge band={s.coding_band} /> : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
-                  <td className="px-3 py-2 text-center text-xs">{s.aptitude_percentage || "–"}</td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell">{s.aptitude_percentage || "–"}</td>
+                  <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell">
                     {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">–</span>}
                   </td>
                   {round === "2" && (
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-2 sm:px-3 py-2 text-center">
                       {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">–</span>}
                     </td>
                   )}
@@ -293,12 +302,39 @@ export default function ExportDialog({ open, label, students, year, round = "1",
           )}
         </div>
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Footer with count + export buttons */}
-        <div className="flex items-center justify-between pt-3 flex-shrink-0 border-t border-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 gap-2 flex-shrink-0 border-t border-border">
           <span className="text-xs text-muted-foreground">
-            Showing {Math.min(filtered.length, 300)} of {filtered.length} filtered ({students.length.toLocaleString()} total)
+            {filtered.length} of {students.length.toLocaleString()} total
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => setMode("confirm")} className="gap-1.5">
               <X className="w-3.5 h-3.5" /> Back
             </Button>
@@ -309,7 +345,7 @@ export default function ExportDialog({ open, label, students, year, round = "1",
               <Download className="w-3.5 h-3.5" /> Excel
             </Button>
             <Button size="sm" onClick={handleReport} className="gap-1.5">
-              <FileText className="w-3.5 h-3.5" /> PDF Report
+              <FileText className="w-3.5 h-3.5" /> PDF
             </Button>
           </div>
         </div>
