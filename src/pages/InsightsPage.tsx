@@ -148,25 +148,26 @@ export default function InsightsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="p-2 rounded-lg hover:bg-muted transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link to="/dashboard" className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </Link>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md flex-shrink-0">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Deep Insights</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Detailed analytics & performance breakdowns</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Deep Insights</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Detailed analytics & performance breakdowns</p>
           </div>
         </div>
         <button
           onClick={handleReportClick}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+          className="inline-flex items-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all w-full sm:w-auto justify-center sm:justify-normal"
         >
           <FileText className="w-4 h-4" />
-          PDF Report
+          <span className="hidden sm:inline">PDF Report</span>
+          <span className="sm:hidden">PDF</span>
         </button>
       </div>
 
@@ -317,7 +318,7 @@ export default function InsightsPage() {
 
       {/* Attendance + Result Pies */}
       <SectionHeader title={isR2 ? "R2 Attendance & Results" : "R1 Attendance & Results"} icon={<PieChartIcon className="w-3.5 h-3.5" />} />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
         <PieCard title="Attendance" data={attendancePie} colors={["hsl(var(--success))", "hsl(var(--destructive))"]} />
         <PieCard title="Results" data={resultPie} colors={["hsl(var(--success))", "hsl(var(--destructive))"]} />
       </div>
@@ -331,7 +332,7 @@ export default function InsightsPage() {
       {isR2 ? (
         /* R2 is purely coding — no aptitude */
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
             <BandCard title="R2 Performance Categories" icon={<Award className="w-4 h-4 text-accent" />} data={r2Categories.map(c => ({ band: c.category, count: c.count, percentage: c.percentage }))} />
             <PieCard
               title="R2 Category Distribution"
@@ -342,7 +343,7 @@ export default function InsightsPage() {
         </>
       ) : (
         /* R1 shows both coding + aptitude */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
           <BandCard title="Coding Band Distribution" icon={<Code2 className="w-4 h-4 text-primary" />} data={codingBands} />
           <BandCard title="Aptitude Band Distribution" icon={<Brain className="w-4 h-4 text-accent" />} data={aptitudeBands} />
         </div>

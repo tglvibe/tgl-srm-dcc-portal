@@ -29,15 +29,15 @@ export default function DepartmentFilter({
   };
 
   return (
-    <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm flex-wrap">
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2">{label}</span>
-      <div className="h-6 w-px bg-border/50" />
+    <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 sm:p-2 shadow-sm flex-wrap">
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-1 whitespace-nowrap">{label}</span>
+      <div className="h-6 w-px bg-border/50 hidden sm:block" />
       <button
         onClick={toggleAll}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+        className={`px-2.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap min-h-8 ${
           allSelected
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            ? "bg-primary text-primary-foreground shadow-sm hover:brightness-110"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
         }`}
       >
         {allSelected ? "All" : "Select All"}
@@ -45,13 +45,13 @@ export default function DepartmentFilter({
       {allSelected && (
         <button
           onClick={() => onChange([])}
-          className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          className="px-2.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/60 whitespace-nowrap min-h-8"
         >
           Clear
         </button>
       )}
       {noneSelected && (
-        <span className="px-3 py-2 text-xs text-muted-foreground">No departments selected</span>
+        <span className="px-2 sm:px-3 py-1.5 text-xs text-muted-foreground">No departments selected</span>
       )}
       {!allSelected && !noneSelected && (
         <>
@@ -59,10 +59,10 @@ export default function DepartmentFilter({
             <button
               key={dept}
               onClick={() => toggleItem(dept)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-1.5 ${
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-1 min-h-8 ${
                 selected.includes(dept)
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-primary text-primary-foreground shadow-sm hover:brightness-110"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
               {dept}

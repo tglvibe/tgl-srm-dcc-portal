@@ -115,4 +115,133 @@
   .nav-active {
     @apply bg-sidebar-accent text-sidebar-primary font-medium;
   }
+
+  /* Responsive padding utilities */
+  .p-mobile {
+    @apply p-3 sm:p-4 md:p-5 lg:p-6;
+  }
+
+  .px-mobile {
+    @apply px-3 sm:px-4 md:px-5 lg:px-6;
+  }
+
+  .py-mobile {
+    @apply py-3 sm:py-4 md:py-5 lg:py-6;
+  }
+
+  /* Responsive grid utilities */
+  .grid-responsive-auto {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6;
+  }
+
+  .grid-responsive-2col {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6;
+  }
+
+  .grid-responsive-3col {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6;
+  }
+
+  /* Responsive gap utilities */
+  .gap-responsive {
+    @apply gap-3 sm:gap-4 md:gap-5 lg:gap-6;
+  }
+
+  /* Responsive text size */
+  .text-responsive-h1 {
+    @apply text-2xl sm:text-3xl md:text-4xl font-bold;
+  }
+
+  .text-responsive-h2 {
+    @apply text-xl sm:text-2xl md:text-3xl font-semibold;
+  }
+
+  .text-responsive-h3 {
+    @apply text-lg sm:text-xl md:text-2xl font-semibold;
+  }
+
+  /* Card responsive padding */
+  .card-responsive {
+    @apply p-3 sm:p-4 md:p-5 lg:p-6;
+  }
+
+  /* Flex wrap responsive */
+  .flex-wrap-responsive {
+    @apply flex flex-wrap gap-2 sm:gap-3 md:gap-4;
+  }
+
+  /* Container responsive */
+  .container-responsive {
+    @apply max-w-full sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl;
+  }
+
+  /* Overflow handling for mobile */
+  .overflow-hidden-mobile {
+    @apply overflow-hidden;
+  }
+
+  .truncate-mobile {
+    @apply truncate;
+  }
+
+  /* Mobile table scroll wrapper */
+  .table-scroll-mobile {
+    @apply overflow-x-auto;
+  }
+
+  /* Stack direction based on screen size */
+  .stack-responsive {
+    @apply flex flex-col md:flex-row gap-3 sm:gap-4 md:gap-5;
+  }
+}
+
+/* Mobile-first media queries */
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    @apply text-lg;
+  }
+
+  h2 {
+    @apply text-base;
+  }
+
+  h3 {
+    @apply text-sm;
+  }
+
+  /* Compact KPI cards on mobile */
+  .kpi-card {
+    @apply p-3;
+  }
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+  button {
+    min-height: 44px;
+  }
+
+  a {
+    min-height: 44px;
+  }
+
+  /* Better spacing for mobile inputs and elements */
+  input, select, textarea {
+    min-height: 44px;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+  body {
+    font-size: 15px;
+  }
+
+  .kpi-card {
+    @apply p-4;
+  }
 }

@@ -62,7 +62,7 @@ export default function StudentAssessments() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         <div className="kpi-card text-center">
           <div className="text-xs text-muted-foreground mb-1">R1 Attendance</div>
           <span className={`text-lg font-bold ${student.r1_attendance === "Present" ? "text-success" : "text-destructive"}`}>

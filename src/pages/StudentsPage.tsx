@@ -72,17 +72,17 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Student Directory</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Student Directory</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             {totalCount.toLocaleString()} total records
           </p>
         </div>
         <button 
           onClick={() => setExportOpen(true)}
-          className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
-          <Download className="w-3.5 h-3.5" /> Export
+          className="h-9 px-3 sm:px-4 rounded-lg border border-border text-xs sm:text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors w-full sm:w-auto justify-center sm:justify-normal">
+          <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export</span>
         </button>
       </div>
 
@@ -90,9 +90,9 @@ export default function StudentsPage() {
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
       {/* Filters */}
-      <div className="kpi-card !p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+      <div className="kpi-card !p-3 sm:!p-4">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-start sm:items-center">
+          <div className="relative flex-1 min-w-[200px] sm:min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search name, reg no, email..."
@@ -102,7 +102,7 @@ export default function StudentsPage() {
             />
           </div>
           <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-9 w-44 text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-44 text-xs sm:text-sm"><SelectValue placeholder="Department" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>
               {departments.map((d) => (
@@ -111,7 +111,7 @@ export default function StudentsPage() {
             </SelectContent>
           </Select>
           <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
-            <SelectTrigger className="h-9 w-36 text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-36 text-xs sm:text-sm"><SelectValue placeholder="Attendance" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="Present">Present</SelectItem>
@@ -119,21 +119,21 @@ export default function StudentsPage() {
             </SelectContent>
           </Select>
           <Select value={resultFilter} onValueChange={setResultFilter}>
-            <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-32 text-xs sm:text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="PASS">Pass</SelectItem>
               <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden">
+          <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-full sm:w-auto">
             <button
               onClick={() => setAssessmentView("band")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-colors flex-1 sm:flex-none ${assessmentView === "band" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >Bands</button>
             <button
               onClick={() => setAssessmentView("percentage")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-colors flex-1 sm:flex-none ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >%</button>
           </div>
         </div>

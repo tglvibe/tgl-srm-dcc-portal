@@ -231,91 +231,94 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-            <Award className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg flex-shrink-0">
+            <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Executive Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Executive Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               Real-time analytics across <span className="font-semibold text-foreground">{stats.total.toLocaleString()}</span> student records
             </p>
           </div>
         </div>
         <Link
           to={`/insights?year=${selectedYear}`}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-warning to-warning/80 text-warning-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-warning to-warning/80 text-warning-foreground font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg hover:brightness-110 transition-all w-full sm:w-auto justify-center sm:justify-normal"
         >
           <Lightbulb className="w-4 h-4" />
-          Deep Insights
+          <span className="hidden sm:inline">Deep Insights</span>
+          <span className="sm:hidden">Insights</span>
         </Link>
       </div>
 
       <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
       
-      {/* Filters Section - Compact Layout */}
-      <div className="space-y-2">
-        <MultiSelectFilter
-          label="Departments"
-          items={departments}
-          selected={selectedDepts}
-          onChange={setSelectedDepts}
-          itemCounts={deptCounts}
-          hideAllButton={true}
-          onSelectAll={() => {
-            setSelectedDepts([...departments]);
-            setSelectedSpecs([...specializations]);
-          }}
-          onItemClick={(dept) => {
-            const deptStudents = students.filter((s) => s.department === dept);
-            openExport(`${dept} Department`);
-          }}
-        />
-        <MultiSelectFilter
-          label="Specializations"
-          items={specializations}
-          selected={selectedSpecs}
-          onChange={setSelectedSpecs}
-          itemCounts={specCounts}
-          hideAllButton={true}
-          onItemClick={(spec) => {
-            const specStudents = students.filter((s) => s.specialization === spec);
-            openExport(`${spec} Specialization`);
-          }}
-        />
+      {/* Filters Section - Responsive Layout */}
+      <div className="space-y-3 lg:space-y-2 bg-card border border-border rounded-xl p-4 sm:p-5">
+        <div className="space-y-3 lg:space-y-2">
+          <MultiSelectFilter
+            label="Departments"
+            items={departments}
+            selected={selectedDepts}
+            onChange={setSelectedDepts}
+            itemCounts={deptCounts}
+            hideAllButton={true}
+            onSelectAll={() => {
+              setSelectedDepts([...departments]);
+              setSelectedSpecs([...specializations]);
+            }}
+            onItemClick={(dept) => {
+              const deptStudents = students.filter((s) => s.department === dept);
+              openExport(`${dept} Department`);
+            }}
+          />
+          <MultiSelectFilter
+            label="Specializations"
+            items={specializations}
+            selected={selectedSpecs}
+            onChange={setSelectedSpecs}
+            itemCounts={specCounts}
+            hideAllButton={true}
+            onItemClick={(spec) => {
+              const specStudents = students.filter((s) => s.specialization === spec);
+              openExport(`${spec} Specialization`);
+            }}
+          />
+        </div>
       </div>
 
       {/* ─── Batch Overview ─── */}
       <div>
         <SectionHeader title="Batch Overview" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Users className="w-5 h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students", students)} />
-          <StatCard icon={<BookOpen className="w-5 h-5" />} value={stats.specs} label="Specializations" variant="info" />
-          <StatCard icon={<UserCheck className="w-5 h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students (R1 Present)", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
-          <StatCard icon={<UserX className="w-5 h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students (R1 Absent)", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-3">
+          <StatCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.total} label="Total Students" onClick={() => openExport("Total Students", students)} />
+          <StatCard icon={<BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.specs} label="Specializations" variant="info" />
+          <StatCard icon={<UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.activeCount} label="Active Students" percentage={`${stats.activePct}%`} variant="success" onClick={() => openExport("Active Students (R1 Present)", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
+          <StatCard icon={<UserX className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.inactiveCount} label="Inactive Students" percentage={`${stats.inactivePct}%`} variant="danger" onClick={() => openExport("Inactive Students (R1 Absent)", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openExport("HCE (High Competency)", students.filter((s) => compareCI(s.overall_category, "HCE")))} />
-          <StatCard icon={<Award className="w-5 h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openExport("LCE (Low Competency)", students.filter((s) => compareCI(s.overall_category, "LCE")))} />
-          <StatCard icon={<AlertCircle className="w-5 h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openExport("NCE (Not Competent)", students.filter((s) => compareCI(s.overall_category, "NCE")))} />
-          <StatCard icon={<HelpCircle className="w-5 h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openExport("Unrated Students", students.filter((s) => compareCI(s.overall_category, "UNRATED")))} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-3">
+          <StatCard icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.hceCount} label="HCE" percentage={`${stats.hcePct}%`} variant="success" onClick={() => openExport("HCE (High Competency)", students.filter((s) => compareCI(s.overall_category, "HCE")))} />
+          <StatCard icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.lceCount} label="LCE" percentage={`${stats.lcePct}%`} variant="warning" onClick={() => openExport("LCE (Low Competency)", students.filter((s) => compareCI(s.overall_category, "LCE")))} />
+          <StatCard icon={<AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.nceCount} label="NCE" percentage={`${stats.ncePct}%`} variant="danger" onClick={() => openExport("NCE (Not Competent)", students.filter((s) => compareCI(s.overall_category, "NCE")))} />
+          <StatCard icon={<HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.unratedCount} label="UNRATED" percentage={`${stats.unratedPct}%`} variant="default" onClick={() => openExport("Unrated Students", students.filter((s) => compareCI(s.overall_category, "UNRATED")))} />
         </div>
       </div>
 
       {/* ─── Round 1 Cards ─── */}
       <div>
         <SectionHeader title="Round 1 Assessment" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-          <StatCard icon={<Eye className="w-5 h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present Students", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
-          <StatCard icon={<EyeOff className="w-5 h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent Students", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
-          <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed Students", students.filter(isR1Passed))} />
-          <StatCard icon={<XCircle className="w-5 h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed Students", students.filter((s) => compareCI(s.r1_result, "FAIL")))} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-3">
+          <StatCard icon={<Eye className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r1Present} label="R1 Present" percentage={`${stats.r1PresentPct}%`} variant="success" onClick={() => openExport("R1 Present Students", students.filter((s) => compareCI(s.r1_attendance, "Present")))} />
+          <StatCard icon={<EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r1Absent} label="R1 Absent" percentage={`${stats.r1AbsentPct}%`} variant="danger" onClick={() => openExport("R1 Absent Students", students.filter((s) => compareCI(s.r1_attendance, "Absent")))} />
+          <StatCard icon={<CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r1Passed} label="R1 Passed" percentage={`${stats.r1PassedPct}%`} variant="success" onClick={() => openExport("R1 Passed Students", students.filter(isR1Passed))} />
+          <StatCard icon={<XCircle className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r1Failed} label="R1 Failed" percentage={`${stats.r1FailedPct}%`} variant="danger" onClick={() => openExport("R1 Failed Students", students.filter((s) => compareCI(s.r1_result, "FAIL")))} />
         </div>
       </div>
 
       {/* ─── R1 Department Charts (right after R1 cards) ─── */}
       {stats.deptBands.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
           <div className="kpi-card">
             <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
               <BarChartIcon className="w-4 h-4 text-primary" />
@@ -326,7 +329,7 @@ export default function AdminDashboard() {
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={80} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
                 <Bar dataKey="C1+C2" fill="hsl(var(--success))" radius={[0, 6, 6, 0]} maxBarSize={32} label={{ position: "right", fontSize: 11, fill: "hsl(var(--foreground))" }} />
@@ -344,7 +347,7 @@ export default function AdminDashboard() {
               <BarChart data={stats.deptBands} layout="vertical" barGap={2} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="department" type="category" tick={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={100} axisLine={false} tickLine={false} />
+                <YAxis dataKey="department" type="category" tick={{ fontSize: 10, fill: "hsl(var(--foreground))", fontWeight: 500 }} width={80} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltipContent />} cursor={{ fill: "hsl(var(--muted))", radius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 16, display: "flex", flexDirection: "row" }} />
                 <Bar dataKey="C5+C6" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} maxBarSize={32} label={{ position: "right", fontSize: 11, fill: "hsl(var(--foreground))" }} />
@@ -358,41 +361,43 @@ export default function AdminDashboard() {
       {stats.r2Conducted && (
         <div>
           <SectionHeader title="Round 2 Assessment" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-            <StatCard icon={<ShieldCheck className="w-5 h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" onClick={() => openExport("R2 Qualified", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL") || compareCI(s.r2_result, "R2-ABSENT") || compareCI(s.r2_result, "R2-PENDING")))} />
-            <StatCard icon={<UserPlus className="w-5 h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" onClick={() => openExport("R2 Present", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")))} />
-            <StatCard icon={<CheckCircle className="w-5 h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" onClick={() => openExport("R2 Passed", students.filter((s) => compareCI(s.r2_result, "R2 PASS")))} />
-            <StatCard icon={<ShieldX className="w-5 h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" onClick={() => openExport("R2 Failed", students.filter((s) => compareCI(s.r2_result, "R2 FAIL")))} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mt-3">
+            <StatCard icon={<ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r2Qualified} label="R2 Qualified" percentage={`${stats.r2QualifiedPct}%`} variant="info" onClick={() => openExport("R2 Qualified", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL") || compareCI(s.r2_result, "R2-ABSENT") || compareCI(s.r2_result, "R2-PENDING")))} />
+            <StatCard icon={<UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r2PresentCount} label="R2 Present" percentage={`${stats.r2PresentPct}%`} variant="success" onClick={() => openExport("R2 Present", students.filter((s) => compareCI(s.r2_result, "R2 PASS") || compareCI(s.r2_result, "R2 FAIL")))} />
+            <StatCard icon={<CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r2PassedCount} label="R2 Passed" percentage={`${stats.r2PassedPct}%`} variant="success" onClick={() => openExport("R2 Passed", students.filter((s) => compareCI(s.r2_result, "R2 PASS")))} />
+            <StatCard icon={<ShieldX className="w-4 h-4 sm:w-5 sm:h-5" />} value={stats.r2FailedCount} label="R2 Failed" percentage={`${stats.r2FailedPct}%`} variant="danger" onClick={() => openExport("R2 Failed", students.filter((s) => compareCI(s.r2_result, "R2 FAIL")))} />
           </div>
 
           {/* R2 Category Table + Pie */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-5 mt-4">
             <div className="kpi-card">
               <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Award className="w-4 h-4 text-accent" />
                 R2 Performance Categories
               </h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-2 border-border">
-                    <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Category</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.r2Categories.map((cat, i) => (
-                    <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors cursor-pointer group" onClick={() => openExport(`R2 - ${cat.category}`, students.filter((s) => compareCI(s.r2_category, cat.category)))}>
-                      <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                        {cat.category}
-                      </td>
-                      <td className="py-3 px-3 text-right font-semibold text-foreground">{cat.count}</td>
-                      <td className="py-3 px-3 text-right text-muted-foreground">{cat.percentage.toFixed(1)}%</td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-border">
+                      <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Category</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Count</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Share</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stats.r2Categories.map((cat, i) => (
+                      <tr key={cat.category} className="border-b border-border/40 hover:bg-muted/30 transition-colors cursor-pointer group" onClick={() => openExport(`R2 - ${cat.category}`, students.filter((s) => compareCI(s.r2_category, cat.category)))}>
+                        <td className="py-3 px-3 font-medium text-foreground flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="truncate text-xs sm:text-sm">{cat.category}</span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-semibold text-foreground text-xs sm:text-sm">{cat.count}</td>
+                        <td className="py-3 px-3 text-right text-muted-foreground text-xs sm:text-sm">{cat.percentage.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="kpi-card flex flex-col">
               <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -418,11 +423,11 @@ export default function AdminDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="w-full mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+              <div className="w-full mt-6 pt-4 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 {stats.r2Categories.filter((c) => c.count > 0).map((cat, i) => (
-                  <div key={cat.category} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="text-xs text-foreground">
+                  <div key={cat.category} className="flex items-center gap-2 text-xs sm:text-sm">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-foreground truncate">
                       {cat.category}: <span className="font-semibold">{cat.count}</span> ({cat.percentage.toFixed(1)}%)
                     </span>
                   </div>

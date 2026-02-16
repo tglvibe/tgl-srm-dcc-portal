@@ -50,29 +50,29 @@ export default function StatCard({ value, label, percentage, subtitle, onClick, 
   return (
     <div
       className={cn(
-        "kpi-card border-l-4 select-none group",
+        "kpi-card border-l-4 select-none group p-3 sm:p-5",
         style.border,
         onClick && "cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
         {icon && (
-          <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", style.iconBg, style.iconColor)}>
+          <div className={cn("w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-sm sm:text-base", style.iconBg, style.iconColor)}>
             {icon}
           </div>
         )}
         {percentage && (
-          <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", style.iconBg, style.pctColor)}>
+          <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0", style.iconBg, style.pctColor)}>
             {percentage}
           </span>
         )}
       </div>
-      <div className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+      <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight break-words">
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
-      <div className="text-[11px] text-muted-foreground mt-1.5 font-medium uppercase tracking-wider">{label}</div>
-      {subtitle && <div className="text-[10px] text-muted-foreground/70 mt-1">{subtitle}</div>}
+      <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-1.5 font-medium uppercase tracking-wider truncate">{label}</div>
+      {subtitle && <div className="text-[9px] sm:text-[10px] text-muted-foreground/70 mt-1 truncate">{subtitle}</div>}
     </div>
   );
 }
