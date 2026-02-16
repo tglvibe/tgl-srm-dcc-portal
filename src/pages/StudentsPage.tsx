@@ -5,6 +5,7 @@ import BandBadge from "@/components/BandBadge";
 import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
+import ExportConfigDialog from "@/components/ExportConfigDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download, ChevronUp, ChevronDown } from "lucide-react";
@@ -20,6 +21,7 @@ export default function StudentsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [assessmentView, setAssessmentView] = useState<"band" | "percentage">("band");
+  const [exportOpen, setExportOpen] = useState(false);
   const navigate = useNavigate();
 
   const { students, loading, error, refetch, totalCount } = useStudents(
@@ -77,7 +79,9 @@ export default function StudentsPage() {
             {totalCount.toLocaleString()} total records
           </p>
         </div>
-        <button className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
+        <button 
+          onClick={() => setExportOpen(true)}
+          className="h-9 px-4 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted flex items-center gap-1.5 transition-colors">
           <Download className="w-3.5 h-3.5" /> Export
         </button>
       </div>
@@ -225,6 +229,16 @@ export default function StudentsPage() {
           {filtered.length > 200 && <span className="text-warning">Refine filters to see more results</span>}
         </div>
       </div>
+
+      {exportOpen && (
+        <ExportConfigDialog
+          open={exportOpen}
+          title="Student Directory Export"
+          description={`Export ${filtered.length} filtered student records with selected columns`}
+          data={filtered}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
     </div>
   );
 }

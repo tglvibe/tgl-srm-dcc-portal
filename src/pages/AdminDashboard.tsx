@@ -6,7 +6,7 @@ import MultiSelectFilter from "@/components/MultiSelectFilter";
 import YearFilter from "@/components/YearFilter";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
-import ExportDialog from "@/components/ExportDialog";
+import ExportConfigDialog from "@/components/ExportConfigDialog";
 
 import {
   Lightbulb, Users, BookOpen, UserCheck, UserX,
@@ -434,12 +434,10 @@ export default function AdminDashboard() {
       )}
 
       {exportCtx && (
-        <ExportDialog
+        <ExportConfigDialog
           open={!!exportCtx}
-          label={exportCtx.label}
-          students={exportCtx.students}
-          year={selectedYear}
-          round="1"
+          title={exportCtx.label}
+          data={exportCtx.students}
           onClose={() => setExportCtx(null)}
         />
       )}
