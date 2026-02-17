@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { useStudents } from "@/hooks/useStudents";
 import YearFilter from "@/components/YearFilter";
 import MultiSelectFilter from "@/components/MultiSelectFilter";
-import ExportDialog from "@/components/ExportDialog";
+import ExportConfigDialog from "@/components/ExportConfigDialog";
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import {
@@ -139,7 +139,14 @@ export default function InsightsPage() {
   if (loading) return <LoadingState message="Loading insights data…" />;
   if (error) return <ErrorState message={error} onRetry={refetch} />;
 
-  const openExport = (label: string) => setExportCtx({ label, students });
+  const openExport = (label: string, filtered?: StudentRecord[]) => {
+    setExportCtx({ label, students: filtered || students });
+  };
+
+  const handleTableRowClick = (row: { department: string; specialization: string }) => {
+    const filteredStudents = students.filter((s) => s.department === row.department && s.specialization === row.specialization);
+    openExport(`${row.department} – ${row.specialization}`, filteredStudents);
+  };
 
   const handleReportClick = () => {
     const params = new URLSearchParams({
@@ -296,7 +303,7 @@ export default function InsightsPage() {
               <tr
                 key={i}
                 className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer group"
-                onClick={() => openExport(`${row.department} – ${row.specialization}`)}
+                onClick={() => handleTableRowClick(row)}
               >
                 <td className="py-2.5 px-3 font-semibold text-foreground">{row.department}</td>
                 <td className="py-2.5 px-3 text-foreground">{row.specialization}</td>
@@ -363,12 +370,10 @@ export default function InsightsPage() {
       )}
 
       {exportCtx && (
-        <ExportDialog
+        <ExportConfigDialog
           open={!!exportCtx}
-          label={exportCtx.label}
-          students={exportCtx.students}
-          year={selectedYear}
-          round={selectedRound}
+          title={exportCtx.label}
+          data={exportCtx.students}
           onClose={() => setExportCtx(null)}
         />
       )}

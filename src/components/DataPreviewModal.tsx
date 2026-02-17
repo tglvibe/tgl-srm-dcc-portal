@@ -21,6 +21,7 @@ interface DataPreviewModalProps {
   description?: string;
   data: StudentRecord[];
   onClose: () => void;
+  onExport?: (data: StudentRecord[]) => void;
 }
 
 type SortKey = keyof StudentRecord;
@@ -54,6 +55,7 @@ export default function DataPreviewModal({
   description,
   data,
   onClose,
+  onExport,
 }: DataPreviewModalProps) {
   const [searchText, setSearchText] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("student_name");
@@ -121,6 +123,17 @@ export default function DataPreviewModal({
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
+          {onExport && (
+            <Button
+              onClick={() => onExport(filtered)}
+              variant="default"
+              size="sm"
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Quick Export
+            </Button>
+          )}
           <Button
             onClick={() => {
               const text = filtered.map((s) => `${s.student_name} (${s.registration_number})`).join("\n");

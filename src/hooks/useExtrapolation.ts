@@ -79,7 +79,8 @@ export function useExtrapolation(students: StudentRecord[], options: { round?: "
         const presentPct = sampleCount > 0 ? (count / sampleCount) * 100 : 0;
         const extrapolatedAbsent = Math.round((presentPct / 100) * aCount);
         const totalProjected = count + extrapolatedAbsent;
-        const totalPct = total > 0 ? (totalProjected / total) * 100 : 0;
+        // Calculate percentage ONLY for inactive students
+        const totalPct = aCount > 0 ? (extrapolatedAbsent / aCount) * 100 : 0;
         return { band, presentCount: count, presentPct, extrapolatedAbsent, totalProjected, totalPct };
       });
     }
@@ -101,8 +102,8 @@ export function useExtrapolation(students: StudentRecord[], options: { round?: "
       return r2.includes("r2 pass") || r2.includes("pass") || r2 === "pass";
     }).length;
     const passRate = pCount > 0 ? passCount / pCount : 0;
-    const projectedPassCount = passCount + Math.round(passRate * aCount);
-    const projectedFailCount = total - projectedPassCount;
+    const projectedPassCountAbsent = Math.round(passRate * aCount);
+    const projectedFailCountAbsent = aCount - projectedPassCountAbsent;
 
     // Average scores extrapolation (assume absent follow same distribution)
     const avgApt = pCount > 0
@@ -126,9 +127,9 @@ export function useExtrapolation(students: StudentRecord[], options: { round?: "
       r2CategoryProjection,
       codingBandProjection,
       aptitudeBandProjection,
-      projectedPassCount,
-      projectedFailCount,
-      projectedPassRate: total > 0 ? ((projectedPassCount / total) * 100).toFixed(1) : "0",
+      projectedPassCount: projectedPassCountAbsent,
+      projectedFailCount: projectedFailCountAbsent,
+      projectedPassRate: aCount > 0 ? ((projectedPassCountAbsent / aCount) * 100).toFixed(1) : "0",
       actualPassRate: pCount > 0 ? ((passCount / pCount) * 100).toFixed(1) : "0",
       projectedAvgAptitude: isFinite(avgApt) ? avgApt.toFixed(1) : "0",
       projectedAvgCoding: isFinite(avgCod) ? avgCod.toFixed(1) : "0",
