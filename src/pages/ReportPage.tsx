@@ -213,7 +213,11 @@ export default function ReportPage() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={attendancePie} cx="50%" cy="50%" outerRadius={70} dataKey="value" nameKey="name"
-                  label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
+                  label={({ name, value }) => {
+                    const total = attendancePie.reduce((sum, item) => sum + item.value, 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${name}: ${percentage}%`;
+                  }} labelLine={false}>
                   <Cell fill="#22c55e" />
                   <Cell fill="#ef4444" />
                 </Pie>
@@ -226,7 +230,11 @@ export default function ReportPage() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={resultPie} cx="50%" cy="50%" outerRadius={70} dataKey="value" nameKey="name"
-                  label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
+                  label={({ name, value }) => {
+                    const total = resultPie.reduce((sum, item) => sum + item.value, 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${name}: ${percentage}%`;
+                  }} labelLine={false}>
                   <Cell fill="#22c55e" />
                   <Cell fill="#ef4444" />
                 </Pie>

@@ -366,6 +366,8 @@ export default function InsightsPage() {
 /* ─── Reusable Premium Components ─── */
 
 function PieCard({ title, data, colors }: { title: string; data: { name: string; value: number }[]; colors: string[] }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  
   return (
     <div className="kpi-card">
       <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -379,7 +381,11 @@ function PieCard({ title, data, colors }: { title: string; data: { name: string;
             cx="50%" cy="50%" innerRadius={50} outerRadius={85}
             dataKey="value" nameKey="name"
             strokeWidth={2} stroke="hsl(var(--card))"
-            label={({ name, value }) => `${name}: ${value}`} labelLine={false}
+            label={({ name, value }) => {
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+              return `${name}: ${percentage}%`;
+            }}
+            labelLine={false}
           >
             {data.filter(d => d.value > 0).map((_, i) => (
               <Cell key={i} fill={colors[i % colors.length]} />
