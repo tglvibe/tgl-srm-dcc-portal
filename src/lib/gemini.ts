@@ -1,4 +1,4 @@
-// Gemini AI integration for Decision Intelligence
+// Gemini AI integration for Projections
 // Add VITE_GEMINI_API_KEY to your environment variables
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -15,7 +15,7 @@ export async function queryGemini(prompt: string, context?: string): Promise<str
     return "AI features are not configured. Please add your Gemini API key.";
   }
 
-  const systemPrompt = `You are a Decision Intelligence assistant for SRM IST University's Executive Portal. 
+  const systemPrompt = `You are a Projections assistant for SRM IST University's Executive Portal. 
 You analyze student assessment data, placement trends, and provide actionable insights.
 ${context ? `\nContext data:\n${context}` : ""}`;
 

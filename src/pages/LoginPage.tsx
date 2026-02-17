@@ -48,7 +48,7 @@ export default function LoginPage() {
             University<br />Executive Portal
           </h1>
           <p className="text-primary-foreground/70 text-lg max-w-md leading-relaxed">
-            Enterprise-grade Decision Intelligence platform for managing student assessments, skills, and performance analytics.
+            Enterprise-grade Projections platform for managing student assessments, skills, and performance analytics.
           </p>
           <div className="flex gap-8 pt-4">
             {[

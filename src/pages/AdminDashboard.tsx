@@ -68,6 +68,7 @@ export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [exportCtx, setExportCtx] = useState<{ label: string; students: StudentRecord[] } | null>(null);
   const [dataPreview, setDataPreview] = useState<{ title: string; description?: string; data: StudentRecord[] } | null>(null);
 
@@ -76,6 +77,7 @@ export default function AdminDashboard() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+  const programs = useMemo(() => Array.from(new Set(allStudents.map((s) => s.program))).filter(Boolean) as string[], [allStudents]);
   
   // Filter students by selected departments first
   const studentsByDept = useMemo(() => {
@@ -90,6 +92,7 @@ export default function AdminDashboard() {
   }, [studentsByDept]);
   
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
+  useEffect(() => { setSelectedPrograms(programs); }, [programs]);
   useEffect(() => { setSelectedSpecs(specializations); }, [specializations]);
 
   const deptCounts = useMemo(() => {
@@ -110,6 +113,7 @@ export default function AdminDashboard() {
 
   const students = useMemo(() => {
     let filtered = allStudents;
+    if (selectedPrograms.length > 0 && selectedPrograms.length < programs.length) filtered = filtered.filter((s) => selectedPrograms.includes(String(s.program)));
     if (selectedDepts.length > 0 && selectedDepts.length < departments.length) {
       filtered = filtered.filter((s) => selectedDepts.includes(s.department));
     }
@@ -257,6 +261,13 @@ export default function AdminDashboard() {
       {/* Filters Section - Responsive Layout */}
       <div className="space-y-3 lg:space-y-2 bg-card border border-border rounded-xl p-4 sm:p-5">
         <div className="space-y-3 lg:space-y-2">
+            <MultiSelectFilter
+              label="Program"
+              items={programs}
+              selected={selectedPrograms}
+              onChange={setSelectedPrograms}
+              hideAllButton={true}
+            />
           <MultiSelectFilter
             label="Departments"
             items={departments}

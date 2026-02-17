@@ -46,7 +46,7 @@ export default function AIChatbot() {
 
   function buildSystemPrompt(): string {
     const { kpis } = analytics;
-    const base = `You are the SRM IST Decision Intelligence AI assistant. You analyze student assessment data and provide actionable insights. Be concise, use numbers, and format with markdown.
+    const base = `You are the SRM IST Projections AI assistant. You analyze student assessment data and provide actionable insights. Be concise, use numbers, and format with markdown.
 
 Current Data Summary:
 - Total Students: ${kpis.totalStudents}
@@ -109,7 +109,7 @@ R1 Band: ${me.r1_band} | R1 Result: ${me.r1_result} | R2 Status: ${me.r2_status 
       <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground shrink-0">
         <Bot className="w-5 h-5" />
         <div className="flex-1">
-          <div className="text-sm font-semibold">DI Assistant</div>
+          <div className="text-sm font-semibold">Projections Assistant</div>
           <div className="text-[10px] opacity-80">
             {configured ? "Gemini AI • Multi-key rotation" : "API key required"}
           </div>

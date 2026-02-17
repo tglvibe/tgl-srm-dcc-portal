@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import AdminDashboard from "@/pages/AdminDashboard";
 import InsightsPage from "@/pages/InsightsPage";
-import IntelligencePage from "@/pages/IntelligencePage";
+import ProjectionsPage from "@/pages/ProjectionsPage";
 import ReportPage from "@/pages/ReportPage";
 import StudentProfile from "@/pages/StudentProfile";
 import StudentsPage from "@/pages/StudentsPage";
@@ -45,7 +45,7 @@ function AuthenticatedRoutes() {
           user?.role === "admin" ? <InsightsPage /> : <Navigate to="/profile" replace />
         } />
         <Route path="/intelligence" element={
-          user?.role === "admin" ? <IntelligencePage /> : <Navigate to="/profile" replace />
+          user?.role === "admin" ? <ProjectionsPage /> : <Navigate to="/profile" replace />
         } />
         <Route path="/report" element={<ReportPage />} />
         <Route path="/students" element={
