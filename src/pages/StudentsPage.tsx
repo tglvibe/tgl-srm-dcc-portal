@@ -8,7 +8,7 @@ import ErrorState from "@/components/ErrorState";
 import ExportConfigDialog from "@/components/ExportConfigDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Download, ChevronUp, ChevronDown, ChevronDown as ChevronDownIcon } from "lucide-react";
 
 type SortKey =
   | "s_no"
@@ -35,6 +35,7 @@ export default function StudentsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [assessmentView, setAssessmentView] = useState<"band" | "percentage">("band");
   const [exportOpen, setExportOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
 
   const { students, loading, error, refetch, totalCount } = useStudents(
@@ -169,11 +170,29 @@ export default function StudentsPage() {
       </div>
 
       {/* Year Filter */}
-      <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      <div className="hidden sm:block">
+        <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+      </div>
+
+      {/* Mobile Filter Toggle */}
+      <div className="md:hidden">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="w-full h-9 px-3 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:bg-muted flex items-center justify-between transition-colors"
+        >
+          <span>{showFilters ? "Hide Filters" : "Show Filters"}</span>
+          <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+        </button>
+      </div>
 
       {/* Filters */}
-      <div className="kpi-card !p-3 sm:!p-4">
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-start sm:items-center">
+      <div className={`kpi-card !p-3 sm:!p-4 ${!showFilters && "md:block hidden"}`}>
+        <div className="flex flex-col gap-3">
+          {/* Year Filter - Mobile only, at top of filter section */}
+          <div className="md:hidden">
+            <YearFilter selectedYear={selectedYear} onYearChange={setSelectedYear} />
+          </div>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 items-start sm:items-center">
           <div className="relative flex-1 min-w-[200px] sm:min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -234,6 +253,7 @@ export default function StudentsPage() {
               onClick={() => setAssessmentView("percentage")}
               className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-colors flex-1 sm:flex-none ${assessmentView === "percentage" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >%</button>
+          </div>
           </div>
         </div>
       </div>
