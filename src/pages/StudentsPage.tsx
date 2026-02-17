@@ -10,7 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download, ChevronUp, ChevronDown } from "lucide-react";
 
-type SortKey = "student_name" | "aptitude_score" | "coding_gained" | "s_no";
+type SortKey =
+  | "s_no"
+  | "registration_number"
+  | "student_name"
+  | "department"
+  | "section"
+  | "r1_attendance"
+  | "aptitude_score"
+  | "coding_gained"
+  | "r1_band"
+  | "r1_result"
+  | "r2_bands"
+  | "r2_result";
 
 export default function StudentsPage() {
   const [selectedYear, setSelectedYear] = useState("all");
@@ -18,6 +30,7 @@ export default function StudentsPage() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [attendanceFilter, setAttendanceFilter] = useState("all");
   const [resultFilter, setResultFilter] = useState("all");
+  const [r2ResultFilter, setR2ResultFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("s_no");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [assessmentView, setAssessmentView] = useState<"band" | "percentage">("band");
@@ -44,27 +57,96 @@ export default function StudentsPage() {
           s.email.toLowerCase().includes(search.toLowerCase());
         const matchDept = deptFilter === "all" || s.department === deptFilter;
         const matchAtt = attendanceFilter === "all" || s.r1_attendance === attendanceFilter;
-        const matchResult = resultFilter === "all" || s.r1_result === resultFilter;
-        return matchSearch && matchDept && matchAtt && matchResult;
+        const matchResult = resultFilter === "all" || (s.r1_result && s.r1_result.replace(/^=+/, "").trim().toUpperCase() === resultFilter.toUpperCase());
+        const matchR2 = r2ResultFilter === "all" || (s.r2_result && s.r2_result.replace(/^=+/, "").replace(/^R2\s*-?/i, "").trim().toUpperCase() === r2ResultFilter.toUpperCase());
+        return matchSearch && matchDept && matchAtt && matchResult && matchR2;
       })
       .sort((a, b) => {
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];
-        if (aVal == null || bVal == null) return 0;
-        if (typeof aVal === "string" && typeof bVal === "string")
+        const aVal: any = (a as any)[sortKey];
+        const bVal: any = (b as any)[sortKey];
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        if (typeof aVal === "string" && typeof bVal === "string") {
           return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        return sortDir === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+        }
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+        }
+        const strA = String(aVal);
+        const strB = String(bVal);
+        return sortDir === "asc" ? strA.localeCompare(strB) : strB.localeCompare(strA);
       });
   }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(200);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageSlice = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
+    setCurrentPage(1);
   };
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return null;
     return sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
+  };
+
+  const capitalize = (s?: string | null) => {
+    if (!s) return "—";
+    const t = String(s).trim();
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+  };
+
+  const r2ResultClass = (raw?: string | null) => {
+    if (!raw) return "text-muted-foreground";
+    const v = String(raw).replace(/^=+/, "").replace(/^R2\s*-?/i, "").trim().toUpperCase();
+    if (v === "PASS") return "text-success";
+    if (v === "FAIL") return "text-destructive";
+    if (v === "ABSENT") return "text-amber-600";
+    if (v === "PENDING") return "text-warning";
+    if (v === "UNRATED" || v === "NA" || v === "N/A") return "text-yellow-400";
+    return "text-muted-foreground";
+  };
+
+  const r1ResultClass = (raw?: string | null) => {
+    if (!raw) return "text-muted-foreground";
+    const v = String(raw).replace(/^=+/, "").trim().toUpperCase();
+    if (v === "PASS") return "text-success";
+    if (v === "FAIL") return "text-destructive";
+    if (v === "ABSENT") return "text-amber-600";
+    if (v === "PENDING") return "text-warning";
+    if (v === "UNRATED" || v === "NA" || v === "N/A") return "text-yellow-400";
+    return "text-muted-foreground";
+  };
+
+  const renderResultBadge = (raw?: string | null) => {
+    if (!raw) return <span className="text-xs text-muted-foreground">—</span>;
+    const norm = String(raw).replace(/^=+/, "").replace(/^R2\s*-?/i, "").trim();
+    const up = norm.toUpperCase();
+    if (up === "PASS") return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">{capitalize(norm)}</span>;
+    if (up === "FAIL") return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{capitalize(norm)}</span>;
+    if (up === "ABSENT") return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{capitalize(norm)}</span>;
+    if (up === "PENDING") return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">{capitalize(norm)}</span>;
+    if (up === "UNRATED" || up === "NA" || up === "N/A") return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-400">{capitalize(norm)}</span>;
+    return <span className="text-xs font-medium">{norm}</span>;
+  };
+
+  const renderBandOrAbsent = (band?: string | null) => {
+    if (!band) return <span className="text-xs text-muted-foreground">—</span>;
+    const up = String(band).replace(/^=+/, "").trim().toUpperCase();
+    if (up === "ABSENT" || up === "R1-ABSENT" || up === "R2-ABSENT") {
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{band}</span>;
+    }
+    // fallback to BandBadge for normal band strings
+    return <BandBadge band={band} />;
   };
 
   if (loading) return <LoadingState message="Loading student directory..." />;
@@ -126,6 +208,17 @@ export default function StudentsPage() {
               <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={r2ResultFilter} onValueChange={setR2ResultFilter}>
+            <SelectTrigger className="h-9 w-full sm:w-32 text-xs sm:text-sm"><SelectValue placeholder="R2 Result" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="PASS">Pass</SelectItem>
+              <SelectItem value="FAIL">Fail</SelectItem>
+              <SelectItem value="ABSENT">Absent</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="UNRATED">Unrated</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-full sm:w-auto">
             <button
               onClick={() => setAssessmentView("band")}
@@ -148,22 +241,43 @@ export default function StudentsPage() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("s_no")}>
                   <span className="flex items-center gap-1">S.No <SortIcon col="s_no" /></span>
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Reg No.</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("registration_number")}>
+                  <span className="flex items-center gap-1">Reg No. <SortIcon col="registration_number" /></span>
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("student_name")}>
                   <span className="flex items-center gap-1">Name <SortIcon col="student_name" /></span>
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Dept / Spec</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Section</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">R1 Att.</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Aptitude</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">Coding</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Band</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R1 Result</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">R2 Status</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("department")}>
+                  <span className="flex items-center gap-1">Dept / Spec <SortIcon col="department" /></span>
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("section")}>
+                  <span className="flex items-center gap-1">Section <SortIcon col="section" /></span>
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground cursor-pointer select-none" onClick={() => toggleSort("r1_attendance")}>
+                  <span className="flex items-center gap-1">R1 Att. <SortIcon col="r1_attendance" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("aptitude_score")}>
+                  <span className="flex items-center gap-1">Aptitude <SortIcon col="aptitude_score" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("coding_gained")}>
+                  <span className="flex items-center gap-1">Coding <SortIcon col="coding_gained" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("r1_band")}>
+                  <span className="flex items-center gap-1">R1 Band <SortIcon col="r1_band" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("r1_result")}>
+                  <span className="flex items-center gap-1">R1 Result <SortIcon col="r1_result" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("r2_bands")}>
+                  <span className="flex items-center gap-1">R2 Band <SortIcon col="r2_bands" /></span>
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs cursor-pointer select-none" onClick={() => toggleSort("r2_result")}>
+                  <span className="flex items-center gap-1">R2 Result <SortIcon col="r2_result" /></span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 200).map((s) => (
+              {pageSlice.map((s) => (
                 <tr
                   key={s.id}
                   className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
@@ -205,19 +319,16 @@ export default function StudentsPage() {
                     )}
                   </td>
                   <td className="px-3 py-3 text-center">
-                    {s.r1_band ? <BandBadge band={s.r1_band} /> : <span className="text-xs text-muted-foreground">—</span>}
+                    {renderBandOrAbsent(s.r1_band)}
                   </td>
                   <td className="px-3 py-3 text-center">
-                    {s.r1_result ? (
-                      <span className={`text-xs font-semibold ${s.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
-                        {s.r1_result}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
+                    {renderResultBadge(s.r1_result)}
                   </td>
                   <td className="px-3 py-3 text-center">
-                    {s.r2_status ? <BandBadge band={s.r2_status} /> : <span className="text-xs text-muted-foreground">—</span>}
+                    {renderBandOrAbsent(s.r2_bands)}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {renderResultBadge(s.r2_result)}
                   </td>
                 </tr>
               ))}
@@ -225,8 +336,30 @@ export default function StudentsPage() {
           </table>
         </div>
         <div className="p-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <span>Showing {Math.min(filtered.length, 200)} of {filtered.length} filtered ({totalCount.toLocaleString()} total)</span>
-          {filtered.length > 200 && <span className="text-warning">Refine filters to see more results</span>}
+          <div className="flex items-center gap-3">
+            <span>Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} filtered ({totalCount.toLocaleString()} total)</span>
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <label className="text-muted-foreground">Per page:</label>
+              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} className="text-xs bg-transparent">
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-1 rounded border border-border text-xs disabled:opacity-50"
+            >Prev</button>
+            <span className="text-xs">{currentPage} / {totalPages}</span>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-2 py-1 rounded border border-border text-xs disabled:opacity-50"
+            >Next</button>
+          </div>
         </div>
       </div>
 

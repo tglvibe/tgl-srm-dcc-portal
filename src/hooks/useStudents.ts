@@ -19,6 +19,25 @@ const isSupabaseConfigured = () => {
   return url && key && !url.includes("placeholder") && !key.includes("placeholder");
 };
 
+const toNumber = (v: any) => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(String(v).replace(/[^0-9.-]+/g, ""));
+  return Number.isNaN(n) ? null : n;
+};
+
+const ensurePct = (v: any) => {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  return s.endsWith("%") ? s : `${s}%`;
+};
+
+const normalizeStr = (v: any) => {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim();
+  s = s.replace(/^=+/, "").replace(/^\"|\"$/g, "").trim();
+  return s === "" ? null : s;
+};
+
 interface UseStudentsOptions {
   year?: string;
   department?: string;
@@ -141,6 +160,14 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
               return s.endsWith("%") ? s : `${s}%`;
             };
 
+            const normalizeStr = (v: any) => {
+              if (v === null || v === undefined) return null;
+              let s = String(v).trim();
+              // remove any leading '=' or stray quotes
+              s = s.replace(/^=+/, "").replace(/^\"|\"$/g, "").trim();
+              return s === "" ? null : s;
+            };
+
             // derive year label from yop if mapping exists
             let yearLabel: string | null = null;
             try {
@@ -177,15 +204,15 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
               coding_gained: toNumber(r.coding_gained),
               coding_max: toNumber(r.coding_max),
               coding_percentage: ensurePct(r.coding_percentage),
-              aptitude_band: r.aptitude_band || null,
-              coding_band: r.coding_band || null,
-              r1_band: r.r1_band || null,
-              r1_result: r.r1_result || null,
-              r2_status: r.r2_status || null,
-              r2_bands: r.r2_bands || null,
-              r2_result: r.r2_result || null,
-              r2_category: r.r2_category || null,
-              overall_category: r.overall_category || null,
+              aptitude_band: normalizeStr(r.aptitude_band),
+              coding_band: normalizeStr(r.coding_band),
+              r1_band: normalizeStr(r.r1_band),
+              r1_result: normalizeStr(r.r1_result),
+              r2_status: normalizeStr(r.r2_status),
+              r2_bands: normalizeStr(r.r2_bands ?? r.r2_band),
+              r2_result: normalizeStr(r.r2_result),
+              r2_category: normalizeStr(r.r2_category),
+              overall_category: normalizeStr(r.overall_category),
             } as StudentRecord;
           });
 
@@ -325,15 +352,15 @@ export function useStudent(registrationNumber: string) {
           coding_gained: toNumber(r.coding_gained),
           coding_max: toNumber(r.coding_max),
           coding_percentage: ensurePct(r.coding_percentage),
-          aptitude_band: r.aptitude_band || null,
-          coding_band: r.coding_band || null,
-          r1_band: r.r1_band || null,
-          r1_result: r.r1_result || null,
-          r2_status: r.r2_status || null,
-          r2_bands: r.r2_bands || null,
-          r2_result: r.r2_result || null,
-          r2_category: r.r2_category || null,
-          overall_category: r.overall_category || null,
+          aptitude_band: normalizeStr(r.aptitude_band),
+          coding_band: normalizeStr(r.coding_band),
+          r1_band: normalizeStr(r.r1_band),
+          r1_result: normalizeStr(r.r1_result),
+          r2_status: normalizeStr(r.r2_status),
+          r2_bands: normalizeStr(r.r2_bands ?? r.r2_band),
+          r2_result: normalizeStr(r.r2_result),
+          r2_category: normalizeStr(r.r2_category),
+          overall_category: normalizeStr(r.overall_category),
         };
 
         setStudent(mapped);
@@ -372,21 +399,21 @@ export function useStudent(registrationNumber: string) {
             specialization: r.specialization || null,
             section: r.section || null,
             r1_attendance: r.r1_attendance || null,
-            aptitude_score: r.aptitude_score ?? null,
-            aptitude_max: r.aptitude_max ?? null,
-            aptitude_percentage: r.aptitude_percentage ?? null,
-            coding_gained: r.coding_gained ?? null,
-            coding_max: r.coding_max ?? null,
-            coding_percentage: r.coding_percentage ?? null,
-            aptitude_band: r.aptitude_band || null,
-            coding_band: r.coding_band || null,
-            r1_band: r.r1_band || null,
-            r1_result: r.r1_result || null,
-            r2_status: r.r2_status || null,
-            r2_bands: r.r2_bands || null,
-            r2_result: r.r2_result || null,
-            r2_category: r.r2_category || null,
-            overall_category: r.overall_category || null,
+            aptitude_score: toNumber(r.aptitude_score),
+            aptitude_max: toNumber(r.aptitude_max),
+            aptitude_percentage: ensurePct(r.aptitude_percentage),
+            coding_gained: toNumber(r.coding_gained),
+            coding_max: toNumber(r.coding_max),
+            coding_percentage: ensurePct(r.coding_percentage),
+            aptitude_band: normalizeStr(r.aptitude_band),
+            coding_band: normalizeStr(r.coding_band),
+            r1_band: normalizeStr(r.r1_band),
+            r1_result: normalizeStr(r.r1_result),
+            r2_status: normalizeStr(r.r2_status),
+            r2_bands: normalizeStr(r.r2_bands ?? r.r2_band),
+            r2_result: normalizeStr(r.r2_result),
+            r2_category: normalizeStr(r.r2_category),
+            overall_category: normalizeStr(r.overall_category),
           };
           setStudent(mapped);
         }
