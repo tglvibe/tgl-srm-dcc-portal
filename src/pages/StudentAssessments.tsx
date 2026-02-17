@@ -9,6 +9,18 @@ export default function StudentAssessments() {
   const { user } = useAuth();
   const { student, loading, error } = useStudent(user?.regNumber || "");
 
+  const renderResultBadge = (raw?: string | null) => {
+    if (!raw) return <span className="text-muted-foreground">—</span>;
+    const norm = String(raw).replace(/^=+/, "").replace(/^R2\s*-?/i, "").trim();
+    const up = norm.toUpperCase();
+    if (up === "PASS") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">{norm}</span>;
+    if (up === "FAIL") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{norm}</span>;
+    if (up === "ABSENT") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{norm}</span>;
+    if (up === "PENDING") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning">{norm}</span>;
+    if (up === "UNRATED" || up === "NA" || up === "N/A") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-400">{norm}</span>;
+    return <span className="text-xs font-medium">{norm}</span>;
+  };
+
   if (loading) return <LoadingState message="Loading assessments..." />;
   if (error || !student) return <ErrorState message={error || "Could not load assessment data"} />;
 
@@ -64,16 +76,8 @@ export default function StudentAssessments() {
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         <div className="kpi-card text-center">
-          <div className="text-xs text-muted-foreground mb-1">R1 Attendance</div>
-          <span className={`text-lg font-bold ${student.r1_attendance === "Present" ? "text-success" : "text-destructive"}`}>
-            {student.r1_attendance}
-          </span>
-        </div>
-        <div className="kpi-card text-center">
           <div className="text-xs text-muted-foreground mb-1">R1 Result</div>
-          <span className={`text-lg font-bold ${student.r1_result === "PASS" ? "text-success" : "text-destructive"}`}>
-            {student.r1_result || "—"}
-          </span>
+          {renderResultBadge(student.r1_result)}
         </div>
         <div className="kpi-card text-center">
           <div className="text-xs text-muted-foreground mb-1">R1 Band</div>

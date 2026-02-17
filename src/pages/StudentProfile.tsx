@@ -13,6 +13,18 @@ export default function StudentProfile() {
   const { user } = useAuth();
   const { student, loading, error } = useStudent(user?.regNumber || "");
 
+  const renderResultBadge = (raw?: string | null) => {
+    if (!raw) return <span className="text-muted-foreground">—</span>;
+    const norm = String(raw).replace(/^=+/, "").replace(/^R2\s*-?/i, "").trim();
+    const up = norm.toUpperCase();
+    if (up === "PASS") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">{norm}</span>;
+    if (up === "FAIL") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{norm}</span>;
+    if (up === "ABSENT") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive">{norm}</span>;
+    if (up === "PENDING") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning">{norm}</span>;
+    if (up === "UNRATED" || up === "NA" || up === "N/A") return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-400">{norm}</span>;
+    return <span className="text-xs font-medium">{norm}</span>;
+  };
+
   if (loading) return <LoadingState message="Loading your profile..." />;
   if (error || !student) {
     return (
@@ -129,25 +141,15 @@ export default function StudentProfile() {
           </div>
           <div className="p-3 sm:p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R1 Result</div>
-            <span className={`text-base sm:text-lg font-bold ${student.r1_result ? "text-success" : "text-destructive"}`}>
-              {student.r1_result || "—"}
-            </span>
+            {renderResultBadge(student.r1_result)}
           </div>
           <div className="p-3 sm:p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R2 Result</div>
-            <span className="text-base sm:text-lg font-bold text-foreground">
-              {student.r2_result || "—"}
-            </span>
+            {renderResultBadge(student.r2_result)}
           </div>
           <div className="p-3 sm:p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
             <div className="text-xs text-muted-foreground mb-2">R2 Status</div>
             {student.r2_bands ? <BandBadge band={student.r2_bands} /> : <span className="text-sm text-muted-foreground">—</span>}
-          </div>
-          <div className="p-3 sm:p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
-            <div className="text-xs text-muted-foreground mb-2">R1 Attendance</div>
-            <span className={`text-base sm:text-lg font-bold ${student.r1_attendance === "Present" ? "text-success" : "text-destructive"}`}>
-              {student.r1_attendance}
-            </span>
           </div>
         </div>
       </div>

@@ -77,7 +77,7 @@ export default function StudentsPage() {
         const strB = String(bVal);
         return sortDir === "asc" ? strA.localeCompare(strB) : strB.localeCompare(strA);
       });
-  }, [students, search, deptFilter, attendanceFilter, resultFilter, sortKey, sortDir]);
+  }, [students, search, deptFilter, attendanceFilter, resultFilter, r2ResultFilter, sortKey, sortDir]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -200,25 +200,31 @@ export default function StudentsPage() {
               <SelectItem value="Absent">Absent</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={resultFilter} onValueChange={setResultFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32 text-xs sm:text-sm"><SelectValue placeholder="R1 Result" /></SelectTrigger>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">R1</span>
+            <Select value={resultFilter} onValueChange={setResultFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-24 text-xs sm:text-sm"><SelectValue placeholder="All" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="PASS">Pass</SelectItem>
               <SelectItem value="FAIL">Fail</SelectItem>
             </SelectContent>
-          </Select>
-          <Select value={r2ResultFilter} onValueChange={setR2ResultFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-32 text-xs sm:text-sm"><SelectValue placeholder="R2 Result" /></SelectTrigger>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">R2</span>
+            <Select value={r2ResultFilter} onValueChange={setR2ResultFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-24 text-xs sm:text-sm"><SelectValue placeholder="All" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="PASS">Pass</SelectItem>
-              <SelectItem value="FAIL">Fail</SelectItem>
-              <SelectItem value="ABSENT">Absent</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="PASS">R2 Pass</SelectItem>
+              <SelectItem value="FAIL">R2 Fail</SelectItem>
+              <SelectItem value="ABSENT">R2-Absent</SelectItem>
+              <SelectItem value="PENDING">R2-Pending</SelectItem>
               <SelectItem value="UNRATED">Unrated</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+          </div>
           <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-full sm:w-auto">
             <button
               onClick={() => setAssessmentView("band")}
