@@ -1,9 +1,10 @@
 import { useExtrapolation, type ExtrapolatedBand } from "@/hooks/useExtrapolation";
+import { useState } from "react";
 import type { StudentRecord } from "@/types/database";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { TrendingUp, AlertTriangle, Info, CheckCircle, XCircle } from "lucide-react";
+import { TrendingUp, ShieldCheck, Info, CheckCircle, XCircle } from "lucide-react";
 import BandBadge from "@/components/BandBadge";
 
 function ProjectionChart({ data, title }: { data: ExtrapolatedBand[]; title: string }) {
@@ -66,7 +67,8 @@ function ProjectionTable({ data, label }: { data: ExtrapolatedBand[]; label: str
 }
 
 export default function ExtrapolationPanel({ students }: { students: StudentRecord[] }) {
-  const ext = useExtrapolation(students);
+  const [round, setRound] = useState<"1" | "2">("1");
+  const ext = useExtrapolation(students, { round });
 
   const confidenceColor = ext.confidenceLevel === "High"
     ? "text-success" : ext.confidenceLevel === "Medium"
@@ -105,7 +107,7 @@ export default function ExtrapolationPanel({ students }: { students: StudentReco
           <div className="text-xl font-bold text-foreground">{ext.projectedFailCount.toLocaleString()}</div>
         </div>
         <div className="kpi-card text-center">
-          <AlertTriangle className={`w-5 h-5 ${confidenceColor} mx-auto mb-2`} />
+          <ShieldCheck className={`w-5 h-5 ${confidenceColor} mx-auto mb-2`} />
           <div className="text-xs text-muted-foreground">Confidence</div>
           <div className={`text-xl font-bold ${confidenceColor}`}>{ext.confidenceLevel}</div>
           <div className="text-[10px] text-muted-foreground">
@@ -132,22 +134,54 @@ export default function ExtrapolationPanel({ students }: { students: StudentReco
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ProjectionChart data={ext.codingBandProjection} title="Coding Band — Actual vs Projected" />
-        <ProjectionChart data={ext.aptitudeBandProjection} title="Aptitude Band — Actual vs Projected" />
+      {/* Round Toggle */}
+      <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm w-fit">
+        <button
+          onClick={() => setRound("1")}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            round === "1"
+              ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          Round 1
+        </button>
+        <button
+          onClick={() => setRound("2")}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            round === "2"
+              ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          Round 2
+        </button>
       </div>
 
-      {/* R1 Band full chart */}
-      <ProjectionChart data={ext.r1BandProjection} title="R1 Band — Full Batch Projection" />
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ProjectionChart data={ext.codingBandProjection} title={`Coding Band — Actual vs Projected (${round === "1" ? "R1" : "R2"})`} />
+        <ProjectionChart data={ext.aptitudeBandProjection} title={`Aptitude Band — Actual vs Projected (${round === "1" ? "R1" : "R2"})`} />
+      </div>
+
+      {/* Band / Category full chart */}
+      {round === "1" ? (
+        <ProjectionChart data={ext.r1BandProjection} title="R1 Band — Full Batch Projection" />
+      ) : (
+        <ProjectionChart data={ext.r2CategoryProjection || []} title="R2 Category — Full Batch Projection" />
+      )}
 
       {/* Detail tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ProjectionTable data={ext.codingBandProjection} label="Coding Band" />
-        <ProjectionTable data={ext.aptitudeBandProjection} label="Aptitude Band" />
+        <ProjectionTable data={ext.codingBandProjection} label={`Coding Band (${round === "1" ? "R1" : "R2"})`} />
+        <ProjectionTable data={ext.aptitudeBandProjection} label={`Aptitude Band (${round === "1" ? "R1" : "R2"})`} />
       </div>
 
-      <ProjectionTable data={ext.r1BandProjection} label="R1 Band" />
+      {round === "1" ? (
+        <ProjectionTable data={ext.r1BandProjection} label="R1 Band" />
+      ) : (
+        <ProjectionTable data={ext.r2CategoryProjection || []} label="R2 Category" />
+      )}
     </div>
   );
 }

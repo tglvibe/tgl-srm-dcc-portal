@@ -1,4 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +22,84 @@ import { Download, Search, Eye, EyeOff, FileJson, ChevronUp, ChevronDown, Zap, X
 import BandBadge from "@/components/BandBadge";
 import type { StudentRecord } from "@/types/database";
 import { useExport } from "@/hooks/useExport";
+
+function ColumnFilterMenu<T extends string | number | symbol>(props: {
+  colKey: keyof StudentRecord;
+  label: string;
+  options: string[];
+  active?: Set<string> | undefined;
+  onApply: (values: Set<string>) => void;
+  onClear: () => void;
+}) {
+  const { colKey, label, options, active, onApply, onClear } = props;
+  const [staged, setStaged] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setStaged(active ? new Set(active) : new Set());
+  }, [active]);
+
+  const toggle = (v: string) => {
+    setStaged((prev) => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v);
+      else next.add(v);
+      return next;
+    });
+  };
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger className="p-1 rounded hover:bg-muted/60" aria-label={`Filter ${label}`}>
+        <Search className="w-3 h-3 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent sideOffset={6} className="w-56 max-h-64 flex flex-col">
+        <div className="sticky top-0 z-20 bg-popover/90 backdrop-blur-sm border-b border-border p-2 flex items-center justify-between gap-2">
+          <div className="text-xs font-semibold">Filter {label}</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setStaged(new Set()); onClear(); setOpen(false); }}
+              className="text-xs text-muted-foreground"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => { const s = new Set(options); setStaged(s); onApply(s); setOpen(false); }}
+              className="text-xs text-muted-foreground"
+            >
+              Select All
+            </button>
+            <button
+              onClick={() => { onApply(staged); setOpen(false); }}
+              className="text-xs font-medium px-2 py-0.5 bg-primary text-primary-foreground rounded"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-auto px-1 py-1">{
+          options.map((val) => (
+            <div key={val} className="px-2 py-1">
+              <label
+                onPointerDown={(e) => e.preventDefault()}
+                className="flex items-center gap-2 cursor-pointer select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={staged.has(val)}
+                  onChange={() => toggle(val)}
+                  className="w-3 h-3"
+                />
+                <span className="truncate">{val}</span>
+              </label>
+            </div>
+          ))
+        }</div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 interface ExportConfigDialogProps {
   open: boolean;
@@ -33,7 +120,7 @@ export default function ExportConfigDialog({
   onClose,
 }: ExportConfigDialogProps) {
   const [mode, setMode] = useState<ExportMode>("quick");
-  const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const {
     columns,
     search,
@@ -48,6 +135,9 @@ export default function ExportConfigDialog({
     exportData,
     visibleColumns,
     summary,
+    columnDistinctValues,
+    columnValueFilters,
+    setColumnFilter,
     setSearch,
     toggleColumn,
     toggleAllColumns,
@@ -58,15 +148,25 @@ export default function ExportConfigDialog({
     handleExportCSV,
     handleExportExcel,
     handleExportJSON,
+    toggleColumnValueFilter,
+    clearColumnFilter,
+    clearAllFilters,
   } = useExport({
     defaultFilename: title,
     selectedData: data,
   });
 
+  // clearAllFilters is exported by the hook; call if available
+  const clearAll = ((): void => {
+    // intentionally empty, will be replaced if hook provides function
+  }) as unknown as () => void;
+
   const visibleColumnKeys = useMemo(
     () => visibleColumns.map((c) => c.key),
     [visibleColumns]
   );
+
+  const navigate = useNavigate();
 
   // Render cell value
   const renderCellValue = (record: StudentRecord, key: keyof StudentRecord) => {
@@ -141,6 +241,9 @@ export default function ExportConfigDialog({
               >
                 <Eye className="w-3 h-3" /> <span className="hidden sm:inline">Preview & Edit</span><span className="sm:hidden">Preview</span>
               </button>
+              <Button variant="ghost" size="sm" onClick={() => clearAllFilters()} className="text-xs ml-2 hidden sm:inline">
+                Clear Filters
+              </Button>
             </div>
           </div>
         </DialogHeader>
@@ -285,20 +388,28 @@ export default function ExportConfigDialog({
                 {/* Column Toggle (only for table view) */}
                 {viewMode === "table" && (
                   <div className="flex items-center gap-0 ml-1 pl-1 border-l border-border/50">
-                    <button
-                      onClick={() => toggleAllColumns(true)}
-                      className="p-1 hover:bg-muted rounded text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      title="Show all"
-                    >
-                      <Eye className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => toggleAllColumns(false)}
-                      className="p-1 hover:bg-muted rounded text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      title="Hide all"
-                    >
-                      <EyeOff className="w-3 h-3" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="p-1 hover:bg-muted rounded text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors" aria-label="Columns">
+                        <Eye className="w-3 h-3" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent sideOffset={6} className="w-56">
+                        <DropdownMenuLabel>Columns</DropdownMenuLabel>
+                        {columns.map((col) => (
+                          <DropdownMenuCheckboxItem
+                            key={col.key}
+                            checked={col.visible}
+                            onCheckedChange={() => toggleColumn(col.key)}
+                          >
+                            {col.label}
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <div className="p-2 flex gap-2">
+                          <button onClick={() => toggleAllColumns(true)} className="text-xs text-muted-foreground">Show all</button>
+                          <button onClick={() => toggleAllColumns(false)} className="text-xs text-muted-foreground">Hide all</button>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )}
               </div>
@@ -447,10 +558,20 @@ export default function ExportConfigDialog({
                             col.sortable ? "cursor-pointer hover:bg-muted/70 transition-colors" : ""
                           }`}
                         >
-                          <span className="flex items-center gap-0.5">
-                            {col.label}
-                            {col.sortable && <SortIcon colKey={col.key} />}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="flex items-center gap-0.5">
+                              {col.label}
+                              {col.sortable && <SortIcon colKey={col.key} />}
+                            </span>
+                            <ColumnFilterMenu
+                              colKey={col.key}
+                              label={col.label}
+                              options={columnDistinctValues[String(col.key)] || []}
+                              active={columnValueFilters[col.key as keyof StudentRecord]}
+                              onApply={(set) => setColumnFilter(col.key, set)}
+                              onClear={() => clearColumnFilter(col.key)}
+                            />
+                          </div>
                         </th>
                       ))}
                     </tr>
@@ -473,7 +594,17 @@ export default function ExportConfigDialog({
                             key={`${record.id}-${col.key}`}
                             className="px-2 py-1 text-xs whitespace-nowrap overflow-hidden text-ellipsis"
                           >
-                            {renderCellValue(record, col.key)}
+                            {col.key === "student_name" ? (
+                              <button
+                                onClick={() => navigate(`/students/${record.registration_number}`)}
+                                className="text-primary font-medium text-xs hover:underline"
+                                title={`Open ${record.student_name}`}
+                              >
+                                {String(record.student_name || "–")}
+                              </button>
+                            ) : (
+                              renderCellValue(record, col.key)
+                            )}
                           </td>
                         ))}
                       </tr>

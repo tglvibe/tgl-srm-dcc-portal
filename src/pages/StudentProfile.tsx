@@ -59,22 +59,21 @@ export default function StudentProfile() {
               <span className="flex items-center gap-1 sm:gap-1.5"><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />Sec {student.section}</span>
             </div>
 
-            <div className="flex gap-2 sm:gap-3 items-center flex-wrap">
-              <span className={`text-xs font-medium px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap ${
-                student.r1_attendance === "Present"
-                  ? "bg-success/10 text-success"
-                  : "bg-destructive/10 text-destructive"
-              }`}>
-                R1: {student.r1_attendance}
-              </span>
-              {student.r1_band && <BandBadge band={student.r1_band} />}
-              {student.r1_result && (
-                <span className={`text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap ${
-                  student.r1_result === "PASS" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                }`}>
-                  {student.r1_result}
-                </span>
-              )}
+            <div className="mt-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/10 border border-border text-xs">
+                  <span className="text-muted-foreground">Apt</span>
+                  <span className="font-semibold text-foreground">{student.aptitude_percentage || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/10 border border-border text-xs">
+                  <span className="text-muted-foreground">Coding</span>
+                  <span className="font-semibold text-foreground">{student.coding_percentage || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/10 border border-border text-xs">
+                  <span className="text-muted-foreground">R2</span>
+                  <span className="font-semibold text-foreground">{student.r2_bands ? student.r2_bands : (student.r2_result ? String(student.r2_result).replace(/^=+/, '') : '—')}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -128,6 +127,25 @@ export default function StudentProfile() {
           ) : (
             <p className="text-xs sm:text-sm text-muted-foreground italic">You were marked absent for R1</p>
           )}
+        </div>
+      </div>
+
+      {/* Round 2 Cards (showcase before Round Summary) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
+        <div className="kpi-card space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Round 2 Result</h3>
+          <div className="text-sm">
+            {renderResultBadge(student.r2_result)}
+          </div>
+          {student.r2_category && <div className="text-xs text-muted-foreground">Category: <span className="ml-1 font-medium text-foreground">{student.r2_category}</span></div>}
+        </div>
+
+        <div className="kpi-card space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Round 2 Status (Band)</h3>
+          <div>
+            {student.r2_bands ? <BandBadge band={student.r2_bands} /> : <span className="text-sm text-muted-foreground">—</span>}
+          </div>
+          <p className="text-xs text-muted-foreground">Round 2 is the selection criterion for final placement rounds.</p>
         </div>
       </div>
 

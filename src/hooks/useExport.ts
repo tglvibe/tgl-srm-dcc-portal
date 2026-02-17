@@ -29,6 +29,7 @@ export function useExport(options: UseExportOptions) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 100;
+  const [columnValueFilters, setColumnValueFilters] = useState<Partial<Record<keyof StudentRecord, Set<string>>>>({});
 
   // Debounce search
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
@@ -43,20 +44,32 @@ export function useExport(options: UseExportOptions) {
     return () => clearTimeout(searchTimeoutRef.current);
   }, [search]);
 
-  // Filter data based on search
+  // Filter data based on search and per-column value filters
   const filteredData = useMemo(() => {
-    if (!debouncedSearch.trim()) return selectedData;
+    if (!debouncedSearch.trim() && Object.keys(columnValueFilters).length === 0) return selectedData;
 
     const lowerSearch = debouncedSearch.toLowerCase();
     return selectedData.filter((record) => {
-      return (
+      const baseMatch = (
         record.student_name?.toLowerCase().includes(lowerSearch) ||
         record.registration_number?.toLowerCase().includes(lowerSearch) ||
         record.email?.toLowerCase().includes(lowerSearch) ||
         record.department?.toLowerCase().includes(lowerSearch)
       );
+
+      // Apply column value filters (multi-select exact matches)
+      const columnFiltersActive = Object.keys(columnValueFilters).length > 0;
+      if (!columnFiltersActive) return baseMatch;
+
+      const passesColumnFilters = Object.entries(columnValueFilters).every(([k, set]) => {
+        if (!set || set.size === 0) return true;
+        const val = String((record as any)[k] ?? "");
+        return set.has(val);
+      });
+
+      return baseMatch && passesColumnFilters;
     });
-  }, [selectedData, debouncedSearch]);
+  }, [selectedData, debouncedSearch, columnValueFilters]);
 
   // Sort filtered data
   const sortedData = useMemo(() => {
@@ -183,6 +196,58 @@ export function useExport(options: UseExportOptions) {
     );
   }, [exportData, columns, defaultFilename]);
 
+  // Distinct values per column for filter menus
+  const columnDistinctValues = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    columns.forEach((col) => {
+      const key = col.key as keyof StudentRecord;
+      const values = Array.from(new Set(selectedData.map((r) => {
+        const v = r[key];
+        return v == null ? "" : String(v);
+      })));
+      map[String(col.key)] = values.filter((v) => v !== "").sort();
+    });
+    return map;
+  }, [selectedData, columns]);
+
+  const toggleColumnValueFilter = useCallback((key: keyof StudentRecord, value: string) => {
+    setColumnValueFilters((prev) => {
+      const next = { ...(prev as any) } as Partial<Record<keyof StudentRecord, Set<string>>>;
+      const set = next[key] ? new Set(next[key]) : new Set<string>();
+      if (set.has(value)) set.delete(value);
+      else set.add(value);
+      next[key] = set;
+      return next;
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const clearColumnFilter = useCallback((key: keyof StudentRecord) => {
+    setColumnValueFilters((prev) => {
+      const next = { ...(prev as any) } as Partial<Record<keyof StudentRecord, Set<string>>>;
+      delete next[key];
+      return next;
+    });
+  }, []);
+
+  const setColumnFilter = useCallback((key: keyof StudentRecord, values: Set<string>) => {
+    setColumnValueFilters((prev) => {
+      const next = { ...(prev as any) } as Partial<Record<keyof StudentRecord, Set<string>>>;
+      next[key] = new Set(values);
+      return next;
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setDebouncedSearch("");
+    setSearch("");
+    setColumnValueFilters({});
+    setSelectedRows(new Set());
+    setSelectAll(false);
+    setCurrentPage(1);
+  }, []);
+
   return {
     // State
     columns,
@@ -201,6 +266,10 @@ export function useExport(options: UseExportOptions) {
     exportData,
     visibleColumns,
     summary,
+    columnDistinctValues,
+    columnValueFilters,
+    setColumnFilter,
+    clearAllFilters,
 
     // Actions
     setSearch,
@@ -211,6 +280,10 @@ export function useExport(options: UseExportOptions) {
     setColumns,
     toggleSort,
     setCurrentPage,
+    toggleColumnValueFilter,
+    clearColumnFilter,
+    setColumnFilter,
+    clearAllFilters,
 
     // Exports
     handleExportCSV,

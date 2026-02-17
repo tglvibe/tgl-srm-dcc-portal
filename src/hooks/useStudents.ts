@@ -41,6 +41,8 @@ const normalizeStr = (v: any) => {
 interface UseStudentsOptions {
   year?: string;
   department?: string;
+  program?: string;
+  specialization?: string;
   section?: string;
   search?: string;
   r1Attendance?: string;
@@ -100,6 +102,8 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
         const yop = YEAR_YOP_MAP[options.year as keyof typeof YEAR_YOP_MAP];
         if (yop) countQuery = countQuery.eq("yop", String(yop));
       }
+      if (options.program) countQuery = countQuery.eq("program", options.program);
+      if (options.specialization) countQuery = countQuery.eq("specialization", options.specialization);
       if (options.department) countQuery = countQuery.eq("department", options.department);
       if (options.section) countQuery = countQuery.eq("section", options.section);
       if (options.r1Attendance) countQuery = countQuery.eq("r1_attendance", options.r1Attendance);
@@ -133,6 +137,8 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
           const yop = YEAR_YOP_MAP[options.year as keyof typeof YEAR_YOP_MAP];
           if (yop) query = query.eq("yop", String(yop));
         }
+        if (options.program) query = query.eq("program", options.program);
+        if (options.specialization) query = query.eq("specialization", options.specialization);
         if (options.department) query = query.eq("department", options.department);
         if (options.section) query = query.eq("section", options.section);
         if (options.r1Attendance) query = query.eq("r1_attendance", options.r1Attendance);

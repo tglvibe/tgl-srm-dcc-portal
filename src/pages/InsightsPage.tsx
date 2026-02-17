@@ -54,6 +54,7 @@ export default function InsightsPage() {
   const [selectedYear, setSelectedYear] = useState(searchParams.get("year") || "all");
   const [selectedRound, setSelectedRound] = useState<"1" | "2">("1");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
   const [exportCtx, setExportCtx] = useState<{ label: string; students: StudentRecord[] } | null>(null);
 
@@ -62,14 +63,18 @@ export default function InsightsPage() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+  const programs = useMemo(() => Array.from(new Set(allStudents.map((s) => s.program))).filter(Boolean) as string[], [allStudents]);
 
-  // Filter students by selected departments first
+  // Filter students by selected programs and departments
   const studentsByDept = useMemo(() => {
-    if (selectedDepts.length === 0) return [];
-    return allStudents.filter((s) => selectedDepts.includes(s.department));
-  }, [allStudents, selectedDepts]);
+    let data = allStudents;
+    if (selectedPrograms.length > 0 && selectedPrograms.length < programs.length) data = data.filter(s => selectedPrograms.includes(String(s.program)));
+    if (selectedDepts.length === 0) return data;
+    return data.filter((s) => selectedDepts.includes(s.department));
+  }, [allStudents, selectedDepts, selectedPrograms, programs]);
 
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
+  useEffect(() => { setSelectedPrograms(programs); }, [programs]);
 
   const deptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -96,6 +101,7 @@ export default function InsightsPage() {
 
   const students = useMemo(() => {
     let data = allStudents;
+    if (selectedPrograms.length > 0 && selectedPrograms.length < programs.length) data = data.filter(s => selectedPrograms.includes(String(s.program)));
     if (selectedDepts.length > 0 && selectedDepts.length < departments.length)
       data = data.filter((s) => selectedDepts.includes(s.department));
     if (selectedSpecs.length > 0 && selectedSpecs.length < specializations.length)
@@ -208,6 +214,13 @@ export default function InsightsPage() {
 
       {/* Filters */}
       <div className="space-y-2">
+        <MultiSelectFilter
+          label="Program"
+          items={programs}
+          selected={selectedPrograms}
+          onChange={setSelectedPrograms}
+          hideAllButton={true}
+        />
         <MultiSelectFilter
           label="Departments"
           items={departments}

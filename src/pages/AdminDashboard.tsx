@@ -68,6 +68,7 @@ export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [exportCtx, setExportCtx] = useState<{ label: string; students: StudentRecord[] } | null>(null);
   const [dataPreview, setDataPreview] = useState<{ title: string; description?: string; data: StudentRecord[] } | null>(null);
 
@@ -76,6 +77,7 @@ export default function AdminDashboard() {
   );
 
   const departments = useMemo(() => Array.from(new Set(allStudents.map((s) => s.department))).sort(), [allStudents]);
+  const programs = useMemo(() => Array.from(new Set(allStudents.map((s) => s.program))).filter(Boolean) as string[], [allStudents]);
   
   // Filter students by selected departments first
   const studentsByDept = useMemo(() => {
@@ -90,6 +92,7 @@ export default function AdminDashboard() {
   }, [studentsByDept]);
   
   useEffect(() => { setSelectedDepts(departments); }, [departments]);
+  useEffect(() => { setSelectedPrograms(programs); }, [programs]);
   useEffect(() => { setSelectedSpecs(specializations); }, [specializations]);
 
   const deptCounts = useMemo(() => {
@@ -110,6 +113,7 @@ export default function AdminDashboard() {
 
   const students = useMemo(() => {
     let filtered = allStudents;
+    if (selectedPrograms.length > 0 && selectedPrograms.length < programs.length) filtered = filtered.filter((s) => selectedPrograms.includes(String(s.program)));
     if (selectedDepts.length > 0 && selectedDepts.length < departments.length) {
       filtered = filtered.filter((s) => selectedDepts.includes(s.department));
     }
@@ -123,9 +127,12 @@ export default function AdminDashboard() {
     const total = students.length;
     const specs = new Set(students.map((s) => s.specialization)).size;
     
-    // Active Students = R1 Attendance = "Present" (case-insensitive)
-    const activeCount = students.filter((s) => compareCI(s.r1_attendance, "Present")).length;
-    const inactiveCount = students.filter((s) => compareCI(s.r1_attendance, "Absent")).length;
+    // Active Students = R1 Attendance = "Present" OR R2 Result = "Unrated" (case-insensitive)
+    const activeCount = students.filter((s) => compareCI(s.r1_attendance, "Present") || compareCI(s.r2_result, "Unrated")).length;
+    
+    // Inactive Students = R1 Attendance = "Absent" OR R2 Result = "NA" (case-insensitive)
+    const inactiveCount = students.filter((s) => compareCI(s.r1_attendance, "Absent") || compareCI(s.r2_result, "NA")).length;
+    
     const r1Present = students.filter((s) => compareCI(s.r1_attendance, "Present")).length;
     const r1Absent = total - r1Present;
     const r1Passed = students.filter(isR1Passed).length;
@@ -156,7 +163,8 @@ export default function AdminDashboard() {
     const deptBands = departments
       .filter((d) => selectedDepts.includes(d))
       .map((dept) => {
-        const ds = students.filter((s) => s.department === dept && compareCI(s.r1_attendance, "Present"));
+        // Include students who are "Present" OR have "Unrated" in R2 Result
+        const ds = students.filter((s) => s.department === dept && (compareCI(s.r1_attendance, "Present") || compareCI(s.r2_result, "Unrated")));
         // Upper Bands: C1 (C1.1, C1.2, C1.3) + C2 (C2.1, C2.2, C2.3)
         const c1UpperBands = ["C1.1", "C1.2", "C1.3"];
         const c2UpperBands = ["C2.1", "C2.2", "C2.3"];
@@ -257,6 +265,13 @@ export default function AdminDashboard() {
       {/* Filters Section - Responsive Layout */}
       <div className="space-y-3 lg:space-y-2 bg-card border border-border rounded-xl p-4 sm:p-5">
         <div className="space-y-3 lg:space-y-2">
+            <MultiSelectFilter
+              label="Program"
+              items={programs}
+              selected={selectedPrograms}
+              onChange={setSelectedPrograms}
+              hideAllButton={true}
+            />
           <MultiSelectFilter
             label="Departments"
             items={departments}
