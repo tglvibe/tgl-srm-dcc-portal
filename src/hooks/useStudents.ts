@@ -81,6 +81,68 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
 
     // Try cache first
     try {
+        // Quick lightweight fetch: select only essential columns to render initial UI fast.
+        // We'll show these records immediately, then continue with a full paginated fetch in background.
+        const quickCols = [
+          "id",
+          "registration_number",
+          "student_name",
+          "email",
+          "department",
+          "specialization",
+          "section",
+          "r1_attendance",
+          "r1_result",
+          "coding_percentage",
+          "coding_band",
+          "r1_band",
+          "aptitude_percentage",
+        ];
+
+        const quickQuery = supabase
+          .from("staging_student_assessments")
+          .select(quickCols.join(","))
+          .limit(2000);
+
+        if (options.year) {
+          const yop = YEAR_YOP_MAP[options.year as keyof typeof YEAR_YOP_MAP];
+          if (yop) quickQuery.eq("yop", String(yop));
+        }
+        if (options.program) quickQuery.eq("program", options.program);
+        if (options.specialization) quickQuery.eq("specialization", options.specialization);
+        if (options.department) quickQuery.eq("department", options.department);
+        if (options.section) quickQuery.eq("section", options.section);
+        if (options.r1Attendance) quickQuery.eq("r1_attendance", options.r1Attendance);
+        if (options.r1Result) quickQuery.eq("r1_result", options.r1Result);
+        if (options.search) {
+          quickQuery.or(
+            `student_name.ilike.%${options.search}%,registration_number.ilike.%${options.search}%,email.ilike.%${options.search}%`
+          );
+        }
+
+        const { data: quickData } = await quickQuery;
+        if (quickData && (quickData as any[]).length > 0) {
+          const lite = (quickData as any[]).map((r) => ({
+            id: Number(r.id),
+            s_no: r.id,
+            registration_number: r.registration_number,
+            student_name: r.student_name,
+            email: r.email || null,
+            department: r.department || null,
+            specialization: r.specialization || null,
+            section: r.section || null,
+            r1_attendance: r.r1_attendance || null,
+            r1_result: normalizeStr(r.r1_result),
+            coding_percentage: ensurePct(r.coding_percentage),
+            coding_band: normalizeStr(r.coding_band),
+            r1_band: normalizeStr(r.r1_band),
+            aptitude_percentage: ensurePct(r.aptitude_percentage),
+          })) as StudentRecord[];
+
+          // show lite data fast
+          setStudents(lite);
+        }
+
       const key = JSON.stringify(options || {});
       const cached = studentsCache.get(key);
       if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
@@ -152,28 +214,8 @@ export function useStudents(options: UseStudentsOptions = {}): UseStudentsReturn
         const { data, error: fetchError } = await query;
         if (fetchError) throw fetchError;
         if (data && (data as any[]).length > 0) {
-          // Map DB rows to StudentRecord shape used by the UI
+          // Map DB rows to StudentRecord shape used by the UI (reuse top-level helpers)
           const mapped = (data as any[]).map((r) => {
-            const toNumber = (v: any) => {
-              if (v === null || v === undefined || v === "") return null;
-              const n = Number(String(v).replace(/[^0-9.-]+/g, ""));
-              return Number.isNaN(n) ? null : n;
-            };
-
-            const ensurePct = (v: any) => {
-              if (v === null || v === undefined) return null;
-              const s = String(v).trim();
-              return s.endsWith("%") ? s : `${s}%`;
-            };
-
-            const normalizeStr = (v: any) => {
-              if (v === null || v === undefined) return null;
-              let s = String(v).trim();
-              // remove any leading '=' or stray quotes
-              s = s.replace(/^=+/, "").replace(/^\"|\"$/g, "").trim();
-              return s === "" ? null : s;
-            };
-
             // derive year label from yop if mapping exists
             let yearLabel: string | null = null;
             try {
