@@ -28,8 +28,8 @@ export const DEFAULT_EXPORT_COLUMNS: ExportColumn[] = [
   { key: "coding_band", label: "Coding Band", visible: true, sortable: true },
   { key: "aptitude_percentage", label: "Aptitude %", visible: true, sortable: true },
   { key: "r1_band", label: "R1 Overall Band", visible: true, sortable: true },
-  { key: "r2_result", label: "R2 Result", visible: false, sortable: true },
-  { key: "r2_bands", label: "R2 Band", visible: false, sortable: true },
+  { key: "r2_result", label: "R2 Result", visible: true, sortable: true },
+  { key: "r2_bands", label: "R2 Band", visible: true, sortable: true },
   { key: "overall_category", label: "Overall Category", visible: false, sortable: true },
 ];
 

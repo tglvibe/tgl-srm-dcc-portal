@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -53,32 +54,48 @@ function ColumnFilterMenu<T extends string | number | symbol>(props: {
       <DropdownMenuTrigger className="p-1 rounded hover:bg-muted/60" aria-label={`Filter ${label}`}>
         <Search className="w-3 h-3 text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent sideOffset={6} className="w-56 max-h-64 flex flex-col">
-        <div className="sticky top-0 z-20 bg-popover/90 backdrop-blur-sm border-b border-border p-2 flex items-center justify-between gap-2">
-          <div className="text-xs font-semibold">Filter {label}</div>
-          <div className="flex items-center gap-2">
+      <DropdownMenuContent sideOffset={6} className="w-56 flex flex-col max-h-[60vh]">
+        <div className="sticky top-0 z-20 bg-popover/90 backdrop-blur-sm border-b border-border p-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold">Filter {label}</div>
+            <div className="text-xs text-muted-foreground">{options.length} values</div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-2">
             <button
-              onClick={() => { setStaged(new Set()); onClear(); setOpen(false); }}
-              className="text-xs text-muted-foreground"
-            >
-              Clear
-            </button>
-            <button
-              onClick={() => { const s = new Set(options); setStaged(s); onApply(s); setOpen(false); }}
+              onClick={() => { const s = new Set(options); setStaged(s); }}
               className="text-xs text-muted-foreground"
             >
               Select All
             </button>
             <button
-              onClick={() => { onApply(staged); setOpen(false); }}
-              className="text-xs font-medium px-2 py-0.5 bg-primary text-primary-foreground rounded"
+              onClick={() => { setStaged(new Set()); }}
+              className="text-xs text-muted-foreground"
             >
-              Apply
+              Deselect All
             </button>
+            <button
+              onClick={() => { setStaged(new Set()); onClear(); }}
+              className="text-xs text-muted-foreground"
+            >
+              Clear
+            </button>
+            <div className="ml-auto">
+              <button
+                onClick={() => { onApply(staged); setOpen(false); }}
+                className="text-xs font-medium px-2 py-0.5 bg-primary text-primary-foreground rounded"
+              >
+                Apply
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="overflow-auto px-1 py-1">{
+        {/* Options list: show first 5 items by default, rest scroll */}
+        <div
+          className="overflow-auto px-1 py-1"
+          style={{ maxHeight: 5 * 36 }}
+        >{
           options.map((val) => (
             <div key={val} className="px-2 py-1">
               <label
@@ -181,6 +198,20 @@ export default function ExportConfigDialog({
       key === "aptitude_band"
     ) {
       return value ? <BandBadge band={String(value)} /> : "–";
+    }
+
+    if (key === "r2_result") {
+      return (
+        <span
+          className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+            String(value).toUpperCase() === "PASS"
+              ? "bg-success/10 text-success"
+              : "bg-destructive/10 text-destructive"
+          }`}
+        >
+          {value || "–"}
+        </span>
+      );
     }
 
     if (key === "r1_attendance") {
@@ -388,28 +419,64 @@ export default function ExportConfigDialog({
                 {/* Column Toggle (only for table view) */}
                 {viewMode === "table" && (
                   <div className="flex items-center gap-0 ml-1 pl-1 border-l border-border/50">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="p-1 hover:bg-muted rounded text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors" aria-label="Columns">
-                        <Eye className="w-3 h-3" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent sideOffset={6} className="w-56">
-                        <DropdownMenuLabel>Columns</DropdownMenuLabel>
-                        {columns.map((col) => (
-                          <DropdownMenuCheckboxItem
-                            key={col.key}
-                            checked={col.visible}
-                            onCheckedChange={() => toggleColumn(col.key)}
-                          >
-                            {col.label}
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <div className="p-2 flex gap-2">
-                          <button onClick={() => toggleAllColumns(true)} className="text-xs text-muted-foreground">Show all</button>
-                          <button onClick={() => toggleAllColumns(false)} className="text-xs text-muted-foreground">Hide all</button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="p-1 hover:bg-muted rounded text-[10px] sm:text-xs text-muted-foreground hover:text-foreground transition-colors" aria-label="Columns">
+                          <Eye className="w-3 h-3" />
+                        </button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-56 p-0">
+                        <div className="flex flex-col max-h-[60vh]">
+                          <div className="sticky top-0 z-20 bg-popover/90 backdrop-blur-sm border-b border-border p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold">Columns</div>
+                              <div className="text-xs text-muted-foreground">{columns.length} items</div>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => toggleAllColumns(true)}
+                                className="text-xs text-muted-foreground"
+                              >
+                                Select All
+                              </button>
+                              <button
+                                onClick={() => toggleAllColumns(false)}
+                                className="text-xs text-muted-foreground"
+                              >
+                                Deselect All
+                              </button>
+                              <button
+                                onClick={() => { setColumns(columns.map((c) => ({ ...c, visible: false }))); }}
+                                className="text-xs text-muted-foreground"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="overflow-auto px-1 py-1" style={{ maxHeight: 5 * 34 }}>
+                            {columns.map((col) => (
+                              <label key={String(col.key)} className="flex items-center gap-2 px-2 py-1">
+                                <input
+                                  type="checkbox"
+                                  checked={col.visible}
+                                  onChange={() => toggleColumn(col.key)}
+                                  className="w-3 h-3"
+                                />
+                                <span className="text-xs">{col.label}</span>
+                              </label>
+                            ))}
+                          </div>
+
+                          <div className="p-2 flex gap-2">
+                            <button onClick={() => toggleAllColumns(true)} className="text-xs text-muted-foreground">Show all</button>
+                            <button onClick={() => toggleAllColumns(false)} className="text-xs text-muted-foreground">Hide all</button>
+                          </div>
                         </div>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 )}
               </div>
@@ -500,10 +567,24 @@ export default function ExportConfigDialog({
                                 <BandBadge band={record.r1_band} />
                               </div>
                             )}
-                            {record.r2_status && (
+                            {record.r2_bands && (
                               <div>
-                                <p className="text-xs text-muted-foreground">R2 Status</p>
-                                <BandBadge band={record.r2_status} />
+                                <p className="text-xs text-muted-foreground">R2 Band</p>
+                                <BandBadge band={record.r2_bands} />
+                              </div>
+                            )}
+                            {record.r2_result && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">R2 Result</p>
+                                <span
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                    String(record.r2_result).toUpperCase() === "PASS"
+                                      ? "bg-success/10 text-success"
+                                      : "bg-destructive/10 text-destructive"
+                                  }`}
+                                >
+                                  {record.r2_result}
+                                </span>
                               </div>
                             )}
                           </div>
